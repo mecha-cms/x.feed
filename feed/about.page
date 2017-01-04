@@ -1,0 +1,14 @@
+---
+title: Feeds
+description: Add RSS and JSON feeds format features.
+author: Taufik Nurrohman
+version: 1.0.0
+...
+
+### Usage
+
+ - Normal page format → `path/to/file`
+ - RSS page format → `path/to/file/feed.rss`
+ - JSON page format → `path/to/file/feed.json`
+
+<!-- block:donate -->
