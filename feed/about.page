@@ -11,4 +11,9 @@ version: 1.0.0
  - RSS page format → `path/to/file/feed.rss`
  - JSON page format → `path/to/file/feed.json`
 
+### Dependency
+
+ - **Extension**
+   - Pages
+
 <!-- block:donate -->
