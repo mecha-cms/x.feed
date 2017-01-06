@@ -13,7 +13,8 @@ version: 1.0.0
 
 ### Dependency
 
- - **Extension**
+#### Extension
+
    - Pages
 
 <!-- block:donate -->
