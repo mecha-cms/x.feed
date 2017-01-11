@@ -17,11 +17,12 @@ Route::hook('%*%', function($path) use($config, $url) {
     $path = rtrim(PAGE . DS . Path::D($path), DS);
     $state = Extend::state(__DIR__);
     $slug = $state['slug'];
+    $n = Path::B($path);
     if ($page = File::exist([
         $path . '.page',
-        $path . DS . Path::B($path) . '.page',
         $path . DS . $config->slug . '.page',
-        $path . DS . Path::B($path) . DS . $config->slug . '.page'
+        $path . DS . $n . '.page',
+        $path . DS . $n . DS . $config->slug . '.page'
     ])) {
         $page = new Page($page);
         $t = (new Date())->format('r');
