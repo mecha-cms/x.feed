@@ -2,6 +2,7 @@
 title: Feeds
 description: Add RSS and JSON feeds format features.
 author: Taufik Nurrohman
+type: Markdown
 version: 1.0.0
 ...
 
