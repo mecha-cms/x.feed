@@ -11,7 +11,7 @@ function fn_rss_item($page) {
     echo '</item>';
 }
 
-Route::hook('%*%', function($path) use($config, $url) {
+Route::lot('%*%', function($path) use($config, $url) {
     $p = explode('/', $path);
     $p = array_pop($p);
     $path = rtrim(PAGE . DS . Path::D($path), DS);
