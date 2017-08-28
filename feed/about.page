@@ -1,9 +1,10 @@
 ---
-title: Feeds
+title: Feed
 description: Add RSS and JSON feeds format features.
 author: Taufik Nurrohman
 type: Markdown
 version: 1.1.0
+dependency: {"extension":["page"]}
 ...
 
 ### Usage
@@ -11,11 +12,5 @@ version: 1.1.0
  - Normal page format → `path/to/file`
  - RSS page format → `path/to/file/feed.rss`
  - JSON page format → `path/to/file/feed.json`
-
-### Dependency
-
-#### Extension
-
- - Pages
 
 <!-- block:donate -->
