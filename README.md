@@ -3,6 +3,7 @@ Feed Extension for Mecha
 
 ### Usage
 
- - Normal page format → `path/to/file`
- - RSS page format → `path/to/file/feed.rss`
- - JSON page format → `path/to/file/feed.json`
+ - Normal view → `/path/to/file`
+ - RSS view → `/path/to/file/feed.rss`
+ - JSON view → `/path/to/file/feed.json`
+ - Sitemap view → `/sitemap.xml`

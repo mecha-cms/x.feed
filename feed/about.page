@@ -3,14 +3,37 @@ title: Feed
 description: Add RSS and JSON feeds format features.
 author: Taufik Nurrohman
 type: Markdown
-version: 1.1.0
-dependency: {"extension":["page"]}
+version: 2.0.0
+dependency:
+  extension:
+    - page
 ...
 
 ### Usage
 
- - Normal page format → `path/to/file`
- - RSS page format → `path/to/file/feed.rss`
- - JSON page format → `path/to/file/feed.json`
+ - Normal view → `/path/to/file`
+ - RSS view → `/path/to/file/feed.rss`
+ - JSON view → `/path/to/file/feed.json`
+ - Sitemap view → `/sitemap.xml`
+
+### Parameter
+
+Supported URL parameters to be used if you want third party sites to fetch your data:
+
+ - `chunk` → Determine how many pages to show per request. Default is `25`.
+ - `step` → Current page offset. Default is `1`.
+ - `sort` → Default is `[-1,"time"]` to sort pages descending by the `time` data.
+ - `fn` → JavaScript callback function name that bounds to the `window` object.
+
+Example API usage:
+
+~~~ .html
+<script>
+function render(json) {
+    alert(json);
+}
+</script>
+<script src="http://127.0.0.1/article/feed.json?chunk=5&fn=render"></script>
+~~~
 
 <!-- block:donate -->
