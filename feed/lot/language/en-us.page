@@ -18,3 +18,6 @@ site_map: Site Map
 site_maps: Site maps
 sites_map: Sites Map
 sites_maps: Sites Maps
+
+rss__: RSS | %{0}%
+sitemap__: Sitemap | %{0}%

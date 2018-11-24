@@ -2,11 +2,11 @@
 
 namespace fn {
     function feed($yield) {
-        global $language, $url;
+        global $language, $site, $url;
         $state = \Extend::state('feed');
         $out  = N;
-        $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap . '">' . N;
-        $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss . '">' . N;
+        $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap__(\To::text($site->title), true) . '">' . N;
+        $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss__(\To::text($site->title), true) . '">' . N;
         return str_replace('</head>', $out . '</head>', $yield);
     }
 }
