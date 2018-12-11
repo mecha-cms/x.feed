@@ -2,11 +2,11 @@
 
 namespace fn {
     function feed($yield) {
-        global $language, $site, $url;
+        global $config, $language, $url;
         $state = \Extend::state('feed');
         $out  = N;
-        $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap__(\To::text($site->title), true) . '">' . N;
-        $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss__(\To::text($site->title), true) . '">' . N;
+        $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap__(\To::text($config->title), true) . '">' . N;
+        $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss__(\To::text($config->title), true) . '">' . N;
         return str_replace('</head>', $out . '</head>', $yield);
     }
 }
@@ -16,7 +16,7 @@ namespace {
     $state = \Extend::state('feed');
     $tag = \Extend::exist('tag') ? \Extend::state('tag') : false;
 
-    \Route::lot('%*%', function($path) use($site, $state, $tag, $url) {
+    \Route::lot('%*%', function($path) use($config, $state, $tag, $url) {
 
         $out = "";
         $type = 'text/plain';
@@ -58,8 +58,8 @@ namespace {
         } else if ($page = \File::exist([
             $directory . '.page',
             $directory . '.archive',
-            $directory . DS . $site->path . '.page',
-            $directory . DS . $site->path . '.archive',
+            $directory . DS . $config->path . '.page',
+            $directory . DS . $config->path . '.archive',
         ])) {
             $page = new \Page($page);
             $t = (new \Date)->format('r');
@@ -94,11 +94,11 @@ namespace {
                 $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
                 $out .= '<channel>';
                 $out .= '<generator>Mecha ' . $version . '</generator>';
-                $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $site->title . ']]></title>';
+                $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $config->title . ']]></title>';
                 $out .= '<link>' . trim($url . '/' . $path, '/') . '</link>';
-                $out .= '<description><![CDATA[' . ($page->description ?: $site->description) . ']]></description>';
+                $out .= '<description><![CDATA[' . ($page->description ?: $config->description) . ']]></description>';
                 $out .= '<lastBuildDate>' . $t . '</lastBuildDate>';
-                $out .= '<language>' . $site->language . '</language>';
+                $out .= '<language>' . $config->language . '</language>';
                 $out .= '<atom:link href="' . $url->clean . \HTTP::query([
                     'chunk' => $chunk,
                     'sort' => $sort,
@@ -171,17 +171,17 @@ namespace {
                 $json = [
                     0 => [
                         'generator' => 'Mecha ' . $version,
-                        'title' => ($page->title ? $page->title . ' | ' : "") . $site->title,
+                        'title' => ($page->title ? $page->title . ' | ' : "") . $config->title,
                         'url' => trim($url . '/' . $path, '/'),
                         'current' => $url->clean . \HTTP::query([
                             'chunk' => $chunk,
                             'sort' => $sort,
                             'step' => $step
                         ]),
-                        'description' => $page->description ?: $site->description,
+                        'description' => $page->description ?: $config->description,
                         'time' => $page->time . "",
                         'update' => date(DATE_WISE, strtotime($t)),
-                        'language' => $site->language
+                        'language' => $config->language
                     ],
                     1 => []
                 ];
@@ -254,7 +254,7 @@ namespace {
                 'Pragma' => 'private',
                 'Cache-Control' => 'private, max-age=' . $i,
                 'Expires' => gmdate('D, d M Y H:i:s', time() + $i) . ' GMT'
-            ])->type($type, $site->charset);
+            ])->type($type, $config->charset);
             echo $fn ? $fn . '(' . json_encode($out) . ');' : $out;
             return $out;
         }
