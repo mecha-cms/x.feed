@@ -18,7 +18,7 @@ dependency:
 
 ### Parameter
 
-Supported URL parameters to be used if you want third party sites to fetch your data:
+Supported URL parameters to be used if you want third party sites fetch your data:
 
  - `chunk` → Determine how many pages to show per request. Default is `25`.
  - `step` → Current page offset. Default is `1`.
