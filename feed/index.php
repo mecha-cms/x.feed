@@ -7,7 +7,7 @@ namespace fn {
         $out  = N;
         $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap__(\To::text($config->title), true) . '">' . N;
         $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss__(\To::text($config->title), true) . '">' . N;
-        return str_replace('</head>', $out . '</head>', $yield);
+        return \str_replace('</head>', $out . '</head>', $yield);
     }
 }
 
@@ -20,14 +20,14 @@ namespace {
 
         $out = "";
         $type = 'text/plain';
-        $n = explode('/', $path);
-        $n = array_pop($n);
+        $n = \explode('/', $path);
+        $n = \array_pop($n);
         $chunk = \HTTP::get('chunk', 25);
         $sort = \extend([-1, 'time'], (array) \HTTP::get('sort', []));
         $step = \HTTP::get('step', 1);
         $fn = \HTTP::get('fn');
-        $directory = rtrim(PAGE . DS . \Path::D($path), DS);
-        $test = defined('DEBUG') && DEBUG === EXTEND . DS . 'feed';
+        $directory = \rtrim(PAGE . DS . \Path::D($path), DS);
+        $test = \defined('DEBUG') && DEBUG === EXTEND . DS . 'feed';
         $version = \Mecha::version();
 
         // `/sitemap.xml`
@@ -37,8 +37,8 @@ namespace {
             $out .= '<?xml version="1.0" encoding="UTF-8"?>';
             $out .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
             if ($folders) {
-                foreach (array_keys($folders) as $v) {
-                    if (!glob($v . DS . '*{page,archive}', GLOB_BRACE | GLOB_NOSORT) || \File::exist([
+                foreach (\array_keys($folders) as $v) {
+                    if (!\glob($v . DS . '*{page,archive}', \GLOB_BRACE | \GLOB_NOSORT) || \File::exist([
                         $v. DS . '$.page',
                         $v. DS . '$.archive'
                     ])) {
@@ -50,7 +50,7 @@ namespace {
                     ]);
                     $out .= '<sitemap>';
                     $out .= '<loc>' . $url . '/' . \Path::R($v, PAGE, '/') . '/' . $state['path']['sitemap'] . '</loc>';
-                    $out .= '<lastmod>' . (new \Date($exist ? filemtime($exist) : null))->W3C() . '</lastmod>';
+                    $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->W3C() . '</lastmod>';
                     $out .= '</sitemap>';
                 }
             }
@@ -71,15 +71,15 @@ namespace {
                 $out .= '<?xml version="1.0" encoding="UTF-8"?>';
                 $out .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
                 if ($folders) {
-                    foreach (array_keys($folders) as $v) {
+                    foreach (\array_keys($folders) as $v) {
                         $out .= '<url>';
                         $out .= '<loc>' . $url . '/' . ($r = \Path::R($v, PAGE, '/')) . '</loc>';
-                        $level = \b(1 - (substr_count($r, '/') * .1), .5, 1); // `0.5` to `1.0`
+                        $level = \b(1 - (\substr_count($r, '/') * .1), .5, 1); // `0.5` to `1.0`
                         $exist = \File::exist([
                             $v . '.page',
                             $v . '.archive'
                         ]);
-                        $out .= '<lastmod>' . (new \Date($exist ? filemtime($exist) : null))->W3C() . '</lastmod>';
+                        $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->W3C() . '</lastmod>';
                         $out .= '<changefreq>monthly</changefreq>';
                         $out .= '<priority>' . $level . '</priority>';
                         $out .= '</url>';
@@ -95,7 +95,7 @@ namespace {
                 $out .= '<channel>';
                 $out .= '<generator>Mecha ' . $version . '</generator>';
                 $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $config->title . ']]></title>';
-                $out .= '<link>' . trim($url . '/' . $path, '/') . '</link>';
+                $out .= '<link>' . \trim($url . '/' . $path, '/') . '</link>';
                 $out .= '<description><![CDATA[' . ($page->description ?: $config->description) . ']]></description>';
                 $out .= '<lastBuildDate>' . $t . '</lastBuildDate>';
                 $out .= '<language>' . $config->language . '</language>';
@@ -105,7 +105,7 @@ namespace {
                     'step' => $step
                 ]) . '" rel="self"/>';
                 $pages = \Get::pages($directory, 'page', $sort, 'path');
-                $pages = array_chunk($pages->vomit(), $chunk);
+                $pages = \array_chunk($pages->vomit(), $chunk);
                 if ($step > 1) {
                     $out .= '<atom:link href="' . $url->clean . \HTTP::query([
                         'chunk' => $chunk,
@@ -132,7 +132,7 @@ namespace {
                         if ($tag && $kinds = (array) $page->kind) {
                             foreach ($kinds as $k) {
                                 $v = \To::tag($k);
-                                if ($f = File::exist([
+                                if ($f = \File::exist([
                                     TAG . DS . $v . '.page',
                                     TAG . DS . $v . '.archive'
                                 ])) {
@@ -152,7 +152,7 @@ namespace {
                     if ($tag && $kinds = (array) $page->kind) {
                         foreach ($kinds as $k) {
                             $v = \To::tag($k);
-                            if ($f = File::exist([
+                            if ($f = \File::exist([
                                 TAG . DS . $v . '.page',
                                 TAG . DS . $v . '.archive'
                             ])) {
@@ -172,7 +172,7 @@ namespace {
                     0 => [
                         'generator' => 'Mecha ' . $version,
                         'title' => ($page->title ? $page->title . ' | ' : "") . $config->title,
-                        'url' => trim($url . '/' . $path, '/'),
+                        'url' => \trim($url . '/' . $path, '/'),
                         'current' => $url->clean . \HTTP::query([
                             'chunk' => $chunk,
                             'sort' => $sort,
@@ -180,12 +180,12 @@ namespace {
                         ]),
                         'description' => $page->description ?: $config->description,
                         'time' => $page->time . "",
-                        'update' => date(DATE_WISE, strtotime($t)),
+                        'update' => \date(DATE_WISE, \strtotime($t)),
                         'language' => $config->language
                     ],
                     1 => []
                 ];
-                if ($tag && $tags = glob(TAG . DS . '*{page,archive}', GLOB_BRACE | GLOB_NOSORT)) {
+                if ($tag && $tags = \glob(TAG . DS . '*{page,archive}', \GLOB_BRACE | \GLOB_NOSORT)) {
                     $json[0]['tags'] = [];
                     foreach ($tags as $v) {
                         $page = new \Tag($v);
@@ -198,10 +198,10 @@ namespace {
                             return $v !== null;
                         });
                     }
-                    ksort($json[0]['tags']);
+                    \ksort($json[0]['tags']);
                 }
                 $pages = \Get::pages($directory, 'page', $sort, 'path');
-                $pages = array_chunk($pages->vomit(), $chunk);
+                $pages = \array_chunk($pages->vomit(), $chunk);
                 if ($step > 1) {
                     $json[0]['previous'] = $url->clean . \HTTP::query([
                         'chunk' => $chunk,
@@ -244,7 +244,7 @@ namespace {
                         return $v !== null;
                     });
                 }
-                $out = $fn ? $json : json_encode($json);
+                $out = $fn ? $json : \json_encode($json);
             }
         }
 
@@ -253,16 +253,16 @@ namespace {
             \HTTP::status(200)->header([
                 'Pragma' => 'private',
                 'Cache-Control' => 'private, max-age=' . $i,
-                'Expires' => gmdate('D, d M Y H:i:s', time() + $i) . ' GMT'
+                'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT'
             ])->type($type, $config->charset);
-            echo $fn ? $fn . '(' . json_encode($out) . ');' : $out;
+            echo $fn ? $fn . '(' . \json_encode($out) . ');' : $out;
             return $out;
         }
 
     });
 
     // Insert some HTML `<link>` that maps to the feed resource
-    if (!\has(array_values($state['path']), \Path::B($url->path))) {
+    if (!\has(\array_values($state['path']), \Path::B($url->path))) {
         // Make sure to run the hook before `fn\minify`
         \Hook::set('shield.yield', "fn\\feed", 1.9);
     }
