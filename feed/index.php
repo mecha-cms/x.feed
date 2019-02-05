@@ -50,7 +50,7 @@ namespace {
                     ]);
                     $out .= '<sitemap>';
                     $out .= '<loc>' . $url . '/' . \Path::R($v, PAGE, '/') . '/' . $state['path']['sitemap'] . '</loc>';
-                    $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->W3C() . '</lastmod>';
+                    $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->ISO8601 . '</lastmod>';
                     $out .= '</sitemap>';
                 }
             }
@@ -79,7 +79,7 @@ namespace {
                             $v . '.page',
                             $v . '.archive'
                         ]);
-                        $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->W3C() . '</lastmod>';
+                        $out .= '<lastmod>' . (new \Date($exist ? \filemtime($exist) : null))->ISO8601 . '</lastmod>';
                         $out .= '<changefreq>monthly</changefreq>';
                         $out .= '<priority>' . $level . '</priority>';
                         $out .= '</url>';
