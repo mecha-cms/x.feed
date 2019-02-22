@@ -22,9 +22,9 @@ namespace {
         $type = 'text/plain';
         $n = \explode('/', $path);
         $n = \array_pop($n);
-        $chunk = \HTTP::get('chunk', 25);
-        $sort = \extend([-1, 'time'], (array) \HTTP::get('sort', []));
-        $step = \HTTP::get('step', 1);
+        $chunk = \HTTP::get('chunk') ?? 25;
+        $sort = \extend([-1, 'time'], (array) \HTTP::get('sort') ?? []);
+        $step = \HTTP::get('step') ?? 1;
         $fn = \HTTP::get('fn');
         $directory = \rtrim(PAGE . DS . \Path::D($path), DS);
         $test = \defined('DEBUG') && DEBUG === EXTEND . DS . 'feed';
