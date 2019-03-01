@@ -264,7 +264,7 @@ namespace {
     // Insert some HTML `<link>` that maps to the feed resource
     if (!\has(\array_values($state['path']), \Path::B($url->path))) {
         // Make sure to run the hook before `fn\minify`
-        \Hook::set('shield.yield', "fn\\feed", 1.9);
+        \Hook::set('content', "fn\\feed", 1.9);
     }
 
 }
