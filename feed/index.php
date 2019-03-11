@@ -1,13 +1,13 @@
 <?php
 
 namespace fn {
-    function feed($yield) {
+    function feed($content) {
         global $config, $language, $url;
         $state = \Extend::state('feed');
         $out  = N;
         $out .= '<link href="' . $url . '/' . $state['path']['sitemap'] . '" rel="sitemap" type="application/xml" title="' . $language->sitemap__(\To::text($config->title), true) . '">' . N;
         $out .= '<link href="' . $url->clean . '/' . $state['path']['rss'] . '" rel="alternate" type="application/rss+xml" title="' . $language->rss__(\To::text($config->title), true) . '">' . N;
-        return \str_replace('</head>', $out . '</head>', $yield);
+        return \str_replace('</head>', $out . '</head>', $content);
     }
 }
 
@@ -16,7 +16,7 @@ namespace {
     $state = \Extend::state('feed');
     $tag = \Extend::exist('tag') ? \Extend::state('tag') : false;
 
-    \Route::lot('%*%', function($path) use($config, $state, $tag, $url) {
+    \Route::lot('(.+)', function($path) use($config, $state, $tag, $url) {
 
         $out = "";
         $type = 'text/plain';
@@ -99,7 +99,7 @@ namespace {
                 $out .= '<description><![CDATA[' . ($page->description ?: $config->description) . ']]></description>';
                 $out .= '<lastBuildDate>' . $t . '</lastBuildDate>';
                 $out .= '<language>' . $config->language . '</language>';
-                $out .= '<atom:link href="' . $url->clean . \HTTP::query([
+                $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
                     'sort' => $sort,
                     'step' => $step
@@ -107,14 +107,14 @@ namespace {
                 $pages = \Get::pages($directory, 'page', $sort, 'path');
                 $pages = \array_chunk($pages->vomit(), $chunk);
                 if ($step > 1) {
-                    $out .= '<atom:link href="' . $url->clean . \HTTP::query([
+                    $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                         'chunk' => $chunk,
                         'sort' => $sort,
                         'step' => $step - 1
                     ]) . '" rel="previous"/>';
                 }
                 if (!empty($pages[$step])) {
-                    $out .= '<atom:link href="' . $url->clean . \HTTP::query([
+                    $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                         'chunk' => $chunk,
                         'sort' => $sort,
                         'step' => $step + 1
@@ -173,7 +173,7 @@ namespace {
                         'generator' => 'Mecha ' . $version,
                         'title' => ($page->title ? $page->title . ' | ' : "") . $config->title,
                         'url' => \trim($url . '/' . $path, '/'),
-                        'current' => $url->clean . \HTTP::query([
+                        'current' => $url->clean . $url->query('&amp;', [
                             'chunk' => $chunk,
                             'sort' => $sort,
                             'step' => $step
@@ -203,14 +203,14 @@ namespace {
                 $pages = \Get::pages($directory, 'page', $sort, 'path');
                 $pages = \array_chunk($pages->vomit(), $chunk);
                 if ($step > 1) {
-                    $json[0]['previous'] = $url->clean . \HTTP::query([
+                    $json[0]['previous'] = $url->clean . $url->query('&amp;', [
                         'chunk' => $chunk,
                         'sort' => $sort,
                         'step' => $step - 1
                     ]);
                 }
                 if (!empty($pages[$step])) {
-                    $json[0]['next'] = $url->clean . \HTTP::query([
+                    $json[0]['next'] = $url->clean . $url->query('&amp;', [
                         'chunk' => $chunk,
                         'sort' => $sort,
                         'step' => $step + 1
@@ -250,19 +250,20 @@ namespace {
 
         if ($out) {
             $i = 60 * 60 * 24; // 1 Day
-            \HTTP::status(200)->header([
+            \HTTP::status(200);
+            \HTTP::header([
                 'Pragma' => 'private',
                 'Cache-Control' => 'private, max-age=' . $i,
                 'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT'
-            ])->type($type, $config->charset);
-            echo $fn ? $fn . '(' . \json_encode($out) . ');' : $out;
-            return $out;
+            ]);
+            \HTTP::type($type, ['charset' => $config->charset]);
+            return $fn ? $fn . '(' . \json_encode($out) . ');' : $out;
         }
 
     });
 
     // Insert some HTML `<link>` that maps to the feed resource
-    if (!\has(\array_values($state['path']), \Path::B($url->path))) {
+    if (!\has(\array_values($state['path']), \Path::B($url->path . ""))) {
         // Make sure to run the hook before `fn\minify`
         \Hook::set('content', "fn\\feed", 1.9);
     }
