@@ -1,6 +1,6 @@
 <?php
 
-Route::lot('*', function() {
+Route::lot('*', function() use($config, $url) {
 
     $state = Extend::state('feed');
     $tag = Extend::exist('tag') ? Extend::state('tag') : false;
@@ -34,7 +34,7 @@ Route::lot('*', function() {
                 $v . '.archive'
             ]);
             $out .= '<sitemap>';
-            $out .= '<loc>' . $this->url . '/' . Path::R($v, PAGE, '/') . '/' . $state['path']['sitemap'] . '</loc>';
+            $out .= '<loc>' . $url . '/' . Path::R($v, PAGE, '/') . '/' . $state['path']['sitemap'] . '</loc>';
             $out .= '<lastmod>' . (new Date($exist ? filemtime($exist) : DATE_NOW))->ISO8601 . '</lastmod>';
             $out .= '</sitemap>';
         }
@@ -42,8 +42,8 @@ Route::lot('*', function() {
     } else if ($page = File::exist([
         $directory . '.page',
         $directory . '.archive',
-        $directory . DS . $this->config->path . '.page',
-        $directory . DS . $this->config->path . '.archive',
+        $directory . DS . $config->path . '.page',
+        $directory . DS . $config->path . '.archive',
     ])) {
         $page = new Page($page);
         $t = (new Date(DATE_NOW))->format('r');
@@ -56,7 +56,7 @@ Route::lot('*', function() {
             $out .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
             foreach ($folders as $v) {
                 $out .= '<url>';
-                $out .= '<loc>' . $this->url . '/' . ($r = Path::R($v, PAGE, '/')) . '</loc>';
+                $out .= '<loc>' . $url . '/' . ($r = Path::R($v, PAGE, '/')) . '</loc>';
                 $level = b(1 - (substr_count($r, '/') * .1), .5, 1); // `0.5` to `1.0`
                 $exist = File::exist([
                     $v . '.page',
@@ -76,12 +76,12 @@ Route::lot('*', function() {
             $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
             $out .= '<channel>';
             $out .= '<generator>Mecha ' . $version . '</generator>';
-            $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $this->config->title . ']]></title>';
-            $out .= '<link>' . trim($this->url . '/' . $path, '/') . '</link>';
-            $out .= '<description><![CDATA[' . ($page->description ?: $this->config->description) . ']]></description>';
+            $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $config->title . ']]></title>';
+            $out .= '<link>' . trim($url . '/' . $path, '/') . '</link>';
+            $out .= '<description><![CDATA[' . ($page->description ?: $config->description) . ']]></description>';
             $out .= '<lastBuildDate>' . $t . '</lastBuildDate>';
-            $out .= '<language>' . $this->config->language . '</language>';
-            $out .= '<atom:link href="' . $this->url->clean . $this->url->query('&amp;', [
+            $out .= '<language>' . $config->language . '</language>';
+            $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                 'chunk' => $chunk,
                 'i' => $i,
                 'sort' => $sort
@@ -89,14 +89,14 @@ Route::lot('*', function() {
             $pages = Get::pages($directory, 'page', $sort, 'path');
             $pages = array_chunk($pages->vomit(), $chunk);
             if ($i > 1) {
-                $out .= '<atom:link href="' . $this->url->clean . $this->url->query('&amp;', [
+                $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
                     'i' => $i - 1,
                     'sort' => $sort
                 ]) . '" rel="prev"/>';
             }
             if (!empty($pages[$i])) {
-                $out .= '<atom:link href="' . $this->url->clean . $this->url->query('&amp;', [
+                $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
                     'i' => $i + 1,
                     'sort' => $sort
@@ -118,7 +118,7 @@ Route::lot('*', function() {
                                 TAG . DS . $v . '.page',
                                 TAG . DS . $v . '.archive'
                             ])) {
-                                $out .= '<category domain="' . $this->url->clean . '/' . $tag->path . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
+                                $out .= '<category domain="' . $url->clean . '/' . $tag->path . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
                             }
                         }
                     }
@@ -138,7 +138,7 @@ Route::lot('*', function() {
                             TAG . DS . $v . '.page',
                             TAG . DS . $v . '.archive'
                         ])) {
-                            $out .= '<category domain="' . $this->url->clean . '/' . $tag->path . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
+                            $out .= '<category domain="' . $url->clean . '/' . $tag->path . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
                         }
                     }
                 }
@@ -153,17 +153,17 @@ Route::lot('*', function() {
             $json = [
                 0 => [
                     'generator' => 'Mecha ' . $version,
-                    'title' => ($page->title ? $page->title . ' | ' : "") . $this->config->title,
-                    'url' => trim($this->url . '/' . $path, '/'),
-                    'current' => $this->url->clean . $this->url->query('&amp;', [
+                    'title' => ($page->title ? $page->title . ' | ' : "") . $config->title,
+                    'url' => trim($url . '/' . $path, '/'),
+                    'current' => $url->clean . $url->query('&amp;', [
                         'chunk' => $chunk,
                         'i' => $i,
                         'sort' => $sort
                     ]),
-                    'description' => $page->description ?: $this->config->description,
+                    'description' => $page->description ?: $config->description,
                     'time' => $page->time . "",
                     'update' => date(DATE_FORMAT, strtotime($t)),
-                    'language' => $this->config->language
+                    'language' => $config->language
                 ],
                 1 => []
             ];
@@ -185,14 +185,14 @@ Route::lot('*', function() {
             $pages = Get::pages($directory, 'page', $sort, 'path');
             $pages = array_chunk($pages->vomit(), $chunk);
             if ($i > 1) {
-                $json[0]['prev'] = $this->url->clean . $this->url->query('&amp;', [
+                $json[0]['prev'] = $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
                     'i' => $i - 1,
                     'sort' => $sort
                 ]);
             }
             if (!empty($pages[$i])) {
-                $json[0]['next'] = $this->url->clean . $this->url->query('&amp;', [
+                $json[0]['next'] = $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
                     'i' => $i + 1,
                     'sort' => $sort
@@ -233,7 +233,7 @@ Route::lot('*', function() {
     if ($out) {
         $i = 60 * 60 * 24; // 1 Day
         $this->status(200);
-        $this->type($type, ['charset' => $this->config->charset]);
+        $this->type($type, ['charset' => $config->charset]);
         $this->header([
             'Pragma' => 'private',
             'Cache-Control' => 'private, max-age=' . $i,
