@@ -5,8 +5,8 @@ author: Taufik Nurrohman
 type: Markdown
 version: 2.2.0
 
-dependency:
-  extension:
+use:
+  extend:
   - page
 ...
 
