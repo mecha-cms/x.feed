@@ -5,9 +5,9 @@ author: Taufik Nurrohman
 type: Markdown
 version: 2.2.0
 
-use:
+lot:
   extend:
-  - page
+    page: 1
 ...
 
 ### Usage
