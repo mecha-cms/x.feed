@@ -2,14 +2,14 @@
 
 Route::lot('*', function() use($config, $url) {
 
-    $state = Extend::state('feed');
-    $tag = Extend::exist('tag') ? Extend::state('tag') : false;
+    $state = extend('feed');
+    $tag = extend('tag') ?? false;
     $out = "";
     $type = 'text/plain';
     $n = explode('/', $path = $this[0]);
     $n = array_pop($n);
     $chunk = HTTP::get('chunk') ?? 25;
-    $sort = extend([-1, 'time'], (array) HTTP::get('sort') ?? []);
+    $sort = alter([-1, 'time'], (array) HTTP::get('sort') ?? []);
     $i = HTTP::get('i') ?? 1;
     $fn = HTTP::get('fn');
     $directory = rtrim(PAGE . DS . Path::D($path), DS);
@@ -161,7 +161,7 @@ Route::lot('*', function() use($config, $url) {
                         'sort' => $sort
                     ]),
                     'description' => $page->description ?: $config->description,
-                    'time' => $page->time . "",
+                    'time' => (string) $page->time,
                     'update' => date(DATE_FORMAT, strtotime($t)),
                     'language' => $config->language
                 ],
@@ -206,7 +206,7 @@ Route::lot('*', function() use($config, $url) {
                         'url' => $page->url,
                         'link' => $page->link,
                         'description' => $page->description,
-                        'time' => $page->time . "",
+                        'time' => (string) $page->time,
                         'kind' => $tag ? (array) $page->kind : null,
                         'id' => $page->id
                     ], function($v) {
@@ -219,7 +219,7 @@ Route::lot('*', function() use($config, $url) {
                     'url' => $page->url,
                     'link' => $page->link,
                     'description' => $page->description,
-                    'time' => $page->time . "",
+                    'time' => (string) $page->time,
                     'kind' => $tag ? (array) $page->kind : null,
                     'id' => $page->id
                 ], function($v) {
