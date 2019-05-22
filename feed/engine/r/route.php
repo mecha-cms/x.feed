@@ -1,6 +1,6 @@
 <?php
 
-Route::lot('*', function() use($config, $url) {
+Route::over('*', function() use($config, $url) {
 
     $state = extend('feed');
     $tag = extend('tag') ?? false;
@@ -87,7 +87,7 @@ Route::lot('*', function() use($config, $url) {
                 'sort' => $sort
             ]) . '" rel="self"/>';
             $pages = Get::pages($directory, 'page', $sort, 'path');
-            $pages = array_chunk($pages->vomit(), $chunk);
+            $pages = array_chunk($pages->get(), $chunk);
             if ($i > 1) {
                 $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
@@ -183,7 +183,7 @@ Route::lot('*', function() use($config, $url) {
                 ksort($json[0]['tags']);
             }
             $pages = Get::pages($directory, 'page', $sort, 'path');
-            $pages = array_chunk($pages->vomit(), $chunk);
+            $pages = array_chunk($pages->get(), $chunk);
             if ($i > 1) {
                 $json[0]['prev'] = $url->clean . $url->query('&amp;', [
                     'chunk' => $chunk,
