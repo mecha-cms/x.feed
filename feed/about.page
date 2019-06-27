@@ -6,7 +6,7 @@ type: Markdown
 version: 2.3.0
 
 lot:
-  extend:
+  x:
     page: 1
 ...
 

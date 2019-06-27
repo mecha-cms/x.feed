@@ -2,8 +2,8 @@
 
 Route::over('*', function() use($config, $url) {
 
-    $state = extend('feed');
-    $tag = extend('tag') ?? false;
+    $state = extension('feed');
+    $tag = extension('tag') ?? false;
     $out = "";
     $type = 'text/plain';
     $n = explode('/', $path = $this[0]);
@@ -13,7 +13,7 @@ Route::over('*', function() use($config, $url) {
     $i = HTTP::get('i') ?? 1;
     $fn = HTTP::get('fn');
     $directory = rtrim(PAGE . DS . Path::D($path), DS);
-    $test = defined('DEBUG') && DEBUG === EXTEND . DS . 'feed';
+    $test = defined('DEBUG') && DEBUG === X . DS . 'feed';
     $version = Mecha::version();
 
     // `/sitemap.xml`
