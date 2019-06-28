@@ -9,7 +9,7 @@ Route::over('*', function() use($config, $url) {
     $n = explode('/', $path = $this[0]);
     $n = array_pop($n);
     $chunk = HTTP::get('chunk') ?? 25;
-    $sort = alter([-1, 'time'], (array) HTTP::get('sort') ?? []);
+    $sort = extend([-1, 'time'], (array) HTTP::get('sort') ?? []);
     $i = HTTP::get('i') ?? 1;
     $fn = HTTP::get('fn');
     $directory = rtrim(PAGE . DS . Path::D($path), DS);
