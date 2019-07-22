@@ -2,8 +2,8 @@
 
 Route::over('*', function() use($config, $url) {
 
-    $state = extension('feed');
-    $tag = extension('tag') ?? false;
+    $state = state('feed');
+    $tag = state('tag') ?? false;
     $out = "";
     $type = 'text/plain';
     $n = explode('/', $path = $this[0]);
