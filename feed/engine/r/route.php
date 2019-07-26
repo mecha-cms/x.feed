@@ -35,7 +35,7 @@ Route::over('*', function() use($config, $url) {
             ]);
             $out .= '<sitemap>';
             $out .= '<loc>' . $url . '/' . Path::R($v, PAGE, '/') . '/' . $state['path']['sitemap'] . '</loc>';
-            $out .= '<lastmod>' . (new Date($exist ? filemtime($exist) : DATE_NOW))->ISO8601 . '</lastmod>';
+            $out .= '<lastmod>' . (new Date($exist ? filemtime($exist) : time()))->ISO8601 . '</lastmod>';
             $out .= '</sitemap>';
         }
         $out .= '</sitemapindex>';
@@ -46,7 +46,7 @@ Route::over('*', function() use($config, $url) {
         $directory . DS . $config->path . '.archive',
     ])) {
         $page = new Page($page);
-        $t = (new Date(DATE_NOW))->format('r');
+        $t = (new Date(time()))->format('r');
         // `/foo/sitemap.xml`
         // `/foo/bar/sitemap.xml`
         if ($path && $n === $state['path']['sitemap']) {
@@ -162,7 +162,7 @@ Route::over('*', function() use($config, $url) {
                     ]),
                     'description' => $page->description ?: $config->description,
                     'time' => (string) $page->time,
-                    'update' => date(DATE_FORMAT, strtotime($t)),
+                    'update' => date('Y-m-d H:i:s', strtotime($t)),
                     'language' => $config->language
                 ],
                 1 => []
