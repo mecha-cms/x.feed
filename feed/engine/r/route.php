@@ -171,7 +171,7 @@ Route::over('*', function() use($config, $url) {
                 $json[0]['tags'] = [];
                 foreach ($tags as $v) {
                     $page = new Tag($v);
-                    $json[0]['tags'][$page->slug] = is($page->get([
+                    $json[0]['tags'][$page->name] = is($page->get([
                         'title' => null,
                         'description' => null,
                         'time' => null,
