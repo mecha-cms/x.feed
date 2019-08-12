@@ -1,6 +1,6 @@
 <?php
 
-Route::over('*', function() use($config, $url) {
+Route::over('*', function($form) use($config, $url) {
 
     $state = state('feed');
     $tag = state('tag');
@@ -9,10 +9,10 @@ Route::over('*', function() use($config, $url) {
     $type = 'text/plain';
     $n = explode('/', $path = $this[0]);
     $n = array_pop($n);
-    $chunk = $_GET['chunk'] ?? 25;
-    $sort = array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-    $i = $_GET['i'] ?? 1;
-    $fn = $_GET['fn'] ?? null;
+    $chunk = $form['chunk'] ?? 25;
+    $sort = array_replace([-1, 'time'], (array) ($form['sort'] ?? []));
+    $i = $form['i'] ?? 1;
+    $fn = $form['fn'] ?? null;
     $directory = rtrim(PAGE . DS . Path::D($path), DS);
     $test = defined('DEBUG') && DEBUG === X . DS . 'feed';
 
