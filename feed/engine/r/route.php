@@ -22,7 +22,7 @@ Route::over('*', function($form) use($config, $url) {
         $out .= '<?xml version="1.0" encoding="UTF-8"?>';
         $out .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
         foreach (g(PAGE, 0, true) as $k => $v) {
-            if (!glob($k . DS . '*{page,archive}', GLOB_BRACE | GLOB_NOSORT) || File::exist([
+            if (!glob($k . DS . '*.{page,archive}', GLOB_BRACE | GLOB_NOSORT) || File::exist([
                 $k . DS . '.page',
                 $k . DS . '.archive'
             ])) {
