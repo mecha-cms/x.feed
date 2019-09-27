@@ -1,23 +1,23 @@
 <?php
 
-Route::over('*', function($form) use($config, $url) {
+Route::over('*', function($form) use($state, $url) {
 
-    $state = state('feed');
-    $tag = state('tag');
-    $p = state('page')['/'] ?? "";
+    $feed = State::get('x.feed', true);
+    $tag = State::get('x.tag', true);
+    $p = State::get('path') ?? "";
     $out = "";
     $type = 'text/plain';
-    $n = explode('/', $path = $this[0]);
-    $n = array_pop($n);
+    $n = explode('/', $path = '/' . $this[0]);
+    $n = '/' . array_pop($n);
     $chunk = $form['chunk'] ?? 25;
     $sort = array_replace([-1, 'time'], (array) ($form['sort'] ?? []));
     $i = $form['i'] ?? 1;
     $fn = $form['fn'] ?? null;
-    $directory = rtrim(PAGE . DS . Path::D($path), DS);
+    $directory = rtrim(PAGE . Path::D($path), DS);
     $test = defined('DEBUG') && DEBUG === X . DS . 'feed';
 
     // `./sitemap.xml`
-    if (!empty($state['/']['sitemap']) && $path === $state['/']['sitemap']) {
+    if (!empty($feed['path']['sitemap']) && $path === $feed['path']['sitemap']) {
         !$test && ($type = 'application/' . ($fn ? 'javascript' : 'xml'));
         $out .= '<?xml version="1.0" encoding="UTF-8"?>';
         $out .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
@@ -33,7 +33,7 @@ Route::over('*', function($form) use($config, $url) {
                 $k . '.archive'
             ]);
             $out .= '<sitemap>';
-            $out .= '<loc>' . $url . '/' . Path::R($k, PAGE, '/') . '/' . $state['/']['sitemap'] . '</loc>';
+            $out .= '<loc>' . $url . '/' . Path::R($k, PAGE, '/') . $feed['path']['sitemap'] . '</loc>';
             $out .= '<lastmod>' . (new Date($exist ? filemtime($exist) : time()))->ISO8601 . '</lastmod>';
             $out .= '</sitemap>';
         }
@@ -41,14 +41,14 @@ Route::over('*', function($form) use($config, $url) {
     } else if ($page = File::exist([
         $directory . '.page',
         $directory . '.archive',
-        $directory . DS . $p . '.page',
-        $directory . DS . $p . '.archive',
+        $directory . $p . '.page',
+        $directory . $p . '.archive',
     ])) {
         $page = new Page($page);
         $t = (new Date(time()))->format('r');
         // `./foo/sitemap.xml`
         // `./foo/bar/sitemap.xml`
-        if ($path && $n === $state['/']['sitemap']) {
+        if ($path && $n === $feed['path']['sitemap']) {
             !$test && ($type = 'application/' . ($fn ? 'javascript' : 'xml'));
             $out .= '<?xml version="1.0" encoding="UTF-8"?>';
             $out .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
@@ -68,17 +68,17 @@ Route::over('*', function($form) use($config, $url) {
             $out .= '</urlset>';
         // `./foo/feed.rss`
         // `./foo/bar/feed.rss`
-        } else if (!empty($state['/']['rss']) && $n === $state['/']['rss']) {
+        } else if (!empty($feed['path']['rss']) && $n === $feed['path']['rss']) {
             !$test && ($type = 'application/' . ($fn ? 'javascript' : 'rss+xml'));
             $out .= '<?xml version="1.0" encoding="UTF-8"?>';
             $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
             $out .= '<channel>';
             $out .= '<generator>Mecha ' . VERSION . '</generator>';
-            $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $config->title . ']]></title>';
-            $out .= '<link>' . trim($url . '/' . $path, '/') . '</link>';
-            $out .= '<description><![CDATA[' . ($page->description ?? $config->description) . ']]></description>';
+            $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $state->title . ']]></title>';
+            $out .= '<link>' . trim($url . $path, '/') . '</link>';
+            $out .= '<description><![CDATA[' . ($page->description ?? $state->description) . ']]></description>';
             $out .= '<lastBuildDate>' . $t . '</lastBuildDate>';
-            $out .= '<language>' . $config->language . '</language>';
+            $out .= '<language>' . $state->language . '</language>';
             $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
                 'chunk' => $chunk,
                 'i' => $i,
@@ -109,14 +109,14 @@ Route::over('*', function($form) use($config, $url) {
                     $out .= '<description><![CDATA[' . $page->description . ']]></description>';
                     $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
                     $out .= '<guid>' . $page->url . '</guid>';
-                    if ($tag && $kinds = (array) $page->kind) {
+                    if ($tag !== null && $kinds = (array) $page->kind) {
                         foreach ($kinds as $k) {
                             $v = To::tag($k);
                             if ($f = File::exist([
                                 TAG . DS . $v . '.page',
                                 TAG . DS . $v . '.archive'
                             ])) {
-                                $out .= '<category domain="' . $url->clean . '/' . $tag->path . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
+                                $out .= '<category domain="' . $url->clean . $tag['path'] . '/' . $v . '"><![CDATA[' . (new Tag($f))->title . ']]></category>';
                             }
                         }
                     }
@@ -140,22 +140,22 @@ Route::over('*', function($form) use($config, $url) {
             $out .= '</rss>';
         // `./foo/feed.json`
         // `./foo/bar/feed.json`
-        } else if (!empty($state['/']['json']) && $n === $state['/']['json']) {
+        } else if (!empty($feed['path']['json']) && $n === $feed['path']['json']) {
             !$test && ($type = 'application/' . ($fn ? 'javascript' : 'json'));
             $json = [
                 0 => [
                     'generator' => 'Mecha ' . VERSION,
-                    'title' => ($page->title ? $page->title . ' | ' : "") . $config->title,
-                    'url' => trim($url . '/' . $path, '/'),
+                    'title' => ($page->title ? $page->title . ' | ' : "") . $state->title,
+                    'url' => trim($url . $path, '/'),
                     'current' => $url->clean . $url->query('&', [
                         'chunk' => $chunk,
                         'i' => $i,
                         'sort' => $sort
                     ]),
-                    'description' => $page->description ?? $config->description,
+                    'description' => $page->description ?? $state->description,
                     'time' => (string) $page->time,
                     'update' => date('Y-m-d H:i:s', strtotime($t)),
-                    'language' => $config->language
+                    'language' => $state->language
                 ],
                 1 => []
             ];
@@ -225,7 +225,7 @@ Route::over('*', function($form) use($config, $url) {
     if ($out) {
         $i = 60 * 60 * 24; // 1 Day
         $this->status(200);
-        $this->type($type, ['charset' => $config->charset]);
+        $this->type($type, ['charset' => $state->charset]);
         $this->header([
             'Pragma' => 'private',
             'Cache-Control' => 'private, max-age=' . $i,
