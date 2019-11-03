@@ -1,9 +1,9 @@
 ---
 title: Feed
-description: Add RSS and JSON feeds format features.
+description: Add RSS and JSON feed features.
 author: Taufik Nurrohman
 type: Markdown
-version: 2.4.0
+version: 2.4.1
 
 use:
   '.\lot\x\page': 1
@@ -12,13 +12,12 @@ use:
 ### Usage
 
  - Normal view → `./path/to/file`
- - RSS view → `./path/to/file/feed.rss`
  - JSON view → `./path/to/file/feed.json`
- - Sitemap view → `./sitemap.xml`
+ - RSS view → `./path/to/file/feed.xml`
 
 ### Parameter
 
-Supported URL parameters to be used if you want third party sites fetch your data:
+Some URL parameters are available to manipulate the feed results, so that you can allow third party applications to fetch your data:
 
  - `chunk` → Determine how many pages to show per request. Default is `25`.
  - `fn` → JavaScript callback function name that bounds to the `window` object.
@@ -30,7 +29,7 @@ Example API usage:
 ~~~ .html
 <script>
 function render(json) {
-    alert(json);
+    console.log(json);
 }
 </script>
 <script src="http://127.0.0.1/article/feed.json?chunk=5&fn=render"></script>
