@@ -81,7 +81,7 @@ function json($any = "") {
         }
     }
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->header([
+    $this->lot([
         'Cache-Control' => 'private, max-age=' . $i,
         'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT',
         'Pragma' => 'private'
@@ -161,7 +161,7 @@ function xml($any = "") {
     $out .= '</channel>';
     $out .= '</rss>';
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->header([
+    $this->lot([
         'Cache-Control' => 'private, max-age=' . $i,
         'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT',
         'Pragma' => 'private'
