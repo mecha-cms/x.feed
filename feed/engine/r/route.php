@@ -25,7 +25,7 @@ function json($any = "") {
     ];
     if ($tags) {
         $out[0]['tags'] = [];
-        foreach (\g(\TAG, 'page') as $k => $v) {
+        foreach (\g(\LOT . \DS . 'tag', 'page') as $k => $v) {
             $tag = new \Tag($k);
             $out[0]['tags'][$tag->name] = [
                 'title' => $tag->title,
@@ -36,7 +36,7 @@ function json($any = "") {
             \ksort($out[0]['tags']);
         }
     }
-    $pages = \Pages::from(\rtrim(\PAGE . \DS . $any, \DS), 'page')->sort($sort);
+    $pages = \Pages::from(\rtrim(\LOT . \DS . 'page' . \DS . $any, \DS), 'page')->sort($sort);
     $pages = \array_chunk($pages->get(), $chunk);
     if ($i > 1) {
         $out[0]['prev'] = $url->clean . $url->query('&', [
@@ -112,7 +112,7 @@ function xml($any = "") {
         'i' => $i,
         'sort' => $sort
     ]) . '" rel="self"/>';
-    $pages = \Pages::from(\rtrim(\PAGE . \DS . $any, \DS), 'page')->sort($sort);
+    $pages = \Pages::from(\rtrim(\LOT . \DS . 'page' . \DS . $any, \DS), 'page')->sort($sort);
     $pages = \array_chunk($pages->get(), $chunk);
     if ($i > 1) {
         $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
