@@ -1,11 +1,17 @@
 <?php namespace _\lot\x\feed;
 
-function json($any = "") {
+function json($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
+    $d = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $page = new \Page(\File::exist([
+        $d . '.page',
+        $d . '.archive'
+    ]) ?: null);
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
     $fn = \Get::get('fn');
+    $images = null !== \State::get('x.image');
     $tags = null !== \State::get('x.tag');
     $out = [
         0 => [
@@ -58,6 +64,7 @@ function json($any = "") {
             $out[1][$k] = [
                 'title' => $page->title,
                 'description' => \str_replace(['<p>', '</p>'], "", $page->description) ?: null,
+                'image' => $images ? $page->image(72, 72) : null,
                 'link' => $page->link,
                 'url' => $page->url,
                 'time' => (string) $page->time,
@@ -71,6 +78,7 @@ function json($any = "") {
         $out[1][0] = [
             'title' => $page->title,
             'description' => \str_replace(['<p>', '</p>'], "", $page->description) ?: null,
+            'image' => $images ? $page->image(72, 72) : null,
             'link' => $page->link,
             'url' => $page->url,
             'time' => (string) $page->time,
@@ -90,8 +98,14 @@ function json($any = "") {
     $this->content(($fn ? $fn . '(' : "") . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ($fn ? ');' : ""));
 }
 
-function xml($any = "") {
+// TODO: Image field
+function xml($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
+    $d = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $page = new \Page(\File::exist([
+        $d . '.page',
+        $d . '.archive'
+    ]) ?: null);
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];

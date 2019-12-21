@@ -3,7 +3,7 @@ title: Feed
 description: Add RSS and JSON feed features.
 author: Taufik Nurrohman
 type: Markdown
-version: 2.4.1
+version: 2.4.2
 
 use:
   '.\lot\x\page': 1
