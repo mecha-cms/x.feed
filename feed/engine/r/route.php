@@ -98,7 +98,6 @@ function json($any = null) {
     $this->content(($fn ? $fn . '(' : "") . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ($fn ? ');' : ""));
 }
 
-// TODO: Image field
 function xml($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
     $d = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
@@ -110,6 +109,7 @@ function xml($any = null) {
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
     $fn = \Get::get('fn');
+    $images = null !== \State::get('x.image');
     $tags = null !== \State::get('x.tag');
     $out = "";
     $out .= '<?xml version="1.0" encoding="UTF-8"?>';
@@ -151,6 +151,13 @@ function xml($any = null) {
             $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description) . ']]></description>';
             $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
             $out .= '<guid>' . $page->url . '</guid>';
+            if ($images && $image = $page->image(72, 72)) {
+                $out .= '<image>';
+                $out .= '<title>' . \basename($link = $page->image) . '</title>';
+                $out .= '<url>' . $image . '</url>';
+                $out .= '<link>' . $link . '</link>';
+                $out .= '</image>';
+            }
             if ($tags) {
                 foreach ($page->tags as $tag) {
                     $out .= '<category domain="' . $tag->url . '"><![CDATA[' . $tag->title . ']]></category>';
@@ -165,6 +172,13 @@ function xml($any = null) {
         $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>', "", $page->description]) . ']]></description>';
         $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
         $out .= '<guid>' . $page->url . '</guid>';
+        if ($images && $image = $page->image(72, 72)) {
+            $out .= '<image>';
+            $out .= '<title>' . \basename($link = $page->image) . '</title>';
+            $out .= '<url>' . $image . '</url>';
+            $out .= '<link>' . $link . '</link>';
+            $out .= '</image>';
+        }
         if ($tags) {
             foreach ($page->tags as $tag) {
                 $out .= '<category domain="' . $tag->url . '"><![CDATA[' . $tag->title . ']]></category>';
