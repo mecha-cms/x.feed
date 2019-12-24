@@ -11,9 +11,9 @@ use:
 
 ### Usage
 
- - Normal view → `./path/to/file`
- - JSON view → `./path/to/file/feed.json`
- - RSS view → `./path/to/file/feed.xml`
+ - Normal view → `./path/to/page`
+ - JSON view → `./path/to/page/feed.json`
+ - RSS view → `./path/to/page/feed.xml`
 
 ### Parameter
 
