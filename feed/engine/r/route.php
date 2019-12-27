@@ -2,11 +2,13 @@
 
 function json($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
-    $d = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $t = $_SERVER['REQUEST_TIME'];
+    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
     $page = new \Page(\File::exist([
-        $d . '.page',
-        $d . '.archive'
+        $f . '.page',
+        $f . '.archive'
     ]) ?: null);
+    $exist = $page->exist;
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
@@ -16,7 +18,7 @@ function json($any = null) {
     $out = [
         0 => [
             'generator' => 'Mecha ' . \VERSION,
-            'title' => ($page->title ? $page->title . ' | ' : "") . $state->title,
+            'title' => ($exist ? $page->title : \i('Error')) . ' | ' . $state->title,
             'url' => $url . $url->path,
             'current' => $url->clean . $url->query('&', [
                 'chunk' => $chunk,
@@ -27,7 +29,7 @@ function json($any = null) {
             'time' => (string) $page->time,
             'language' => $state->language
         ],
-        1 => []
+        1 => null
     ];
     if ($tags) {
         $out[0]['tags'] = [];
@@ -42,7 +44,7 @@ function json($any = null) {
             \ksort($out[0]['tags']);
         }
     }
-    $pages = \Pages::from(\rtrim(\LOT . \DS . 'page' . \DS . $any, \DS), 'page')->sort($sort);
+    $pages = \Pages::from($f, 'page')->sort($sort);
     $pages = \array_chunk($pages->get(), $chunk);
     if ($i > 1) {
         $out[0]['prev'] = $url->clean . $url->query('&', [
@@ -59,6 +61,7 @@ function json($any = null) {
         ]);
     }
     if (!empty($pages[$i - 1])) {
+        $out[1] = [];
         foreach ($pages[$i - 1] as $k => $page) {
             $page = new \Page($page);
             $out[1][$k] = [
@@ -74,7 +77,8 @@ function json($any = null) {
                 $out[1][$k]['kind'] = (array) $page->kind;
             }
         }
-    } else {
+    } else if ($exist) {
+        $out[1] = [];
         $out[1][0] = [
             'title' => $page->title,
             'description' => \str_replace(['<p>', '</p>'], "", $page->description) ?: null,
@@ -87,12 +91,18 @@ function json($any = null) {
         if ($tags) {
             $out[1][0]['kind'] = (array) $page->kind;
         }
+    } else {
+        $this->status(404);
     }
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->lot([
-        'Cache-Control' => 'private, max-age=' . $i,
-        'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT',
+    $this->lot($exist ? [
+        'Cache-Control' => 'max-age=' . $i . ', private',
+        'Expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
         'Pragma' => 'private'
+    ] : [
+        'Cache-Control' => 'max-age=0, must-revalidate, no-cache, no-store',
+        'Expires' => '0',
+        'Pragma' => 'no-cache'
     ]);
     $this->type('application/' . ($fn ? 'javascript' : 'json'));
     $this->content(($fn ? $fn . '(' : "") . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ($fn ? ');' : ""));
@@ -100,11 +110,13 @@ function json($any = null) {
 
 function xml($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
-    $d = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $t = $_SERVER['REQUEST_TIME'];
+    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
     $page = new \Page(\File::exist([
-        $d . '.page',
-        $d . '.archive'
+        $f . '.page',
+        $f . '.archive'
     ]) ?: null);
+    $exist = $page->exist;
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
@@ -116,17 +128,17 @@ function xml($any = null) {
     $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
     $out .= '<channel>';
     $out .= '<generator>Mecha ' . \VERSION . '</generator>';
-    $out .= '<title><![CDATA[' . ($page->title ? $page->title . ' | ' : "") . $state->title . ']]></title>';
+    $out .= '<title><![CDATA[' . ($exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
     $out .= '<link>' . $url . $url->path . '</link>';
     $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description ?? $state->description) . ']]></description>';
-    $out .= '<lastBuildDate>' . $time->format('r') . '</lastBuildDate>';
+    $out .= '<lastBuildDate>' . \date('r', $t) . '</lastBuildDate>';
     $out .= '<language>' . $state->language . '</language>';
     $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
         'chunk' => $chunk,
         'i' => $i,
         'sort' => $sort
     ]) . '" rel="self"/>';
-    $pages = \Pages::from(\rtrim(\LOT . \DS . 'page' . \DS . $any, \DS), 'page')->sort($sort);
+    $pages = \Pages::from($f, 'page')->sort($sort);
     $pages = \array_chunk($pages->get(), $chunk);
     if ($i > 1) {
         $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
@@ -143,8 +155,8 @@ function xml($any = null) {
         ]) . '" rel="next"/>';
     }
     if (!empty($pages[$i - 1])) {
-        foreach ($pages[$i - 1] as $k => $page) {
-            $page = new \Page($page);
+        foreach ($pages[$i - 1] as $k => $v) {
+            $page = new \Page($v);
             $out .= '<item>';
             $out .= '<title><![CDATA[' . $page->title . ']]></title>';
             $out .= '<link>' . $page->url . '</link>';
@@ -165,11 +177,11 @@ function xml($any = null) {
             }
             $out .= '</item>';
         }
-    } else {
+    } else if ($exist) {
         $out .= '<item>';
         $out .= '<title><![CDATA[' . $page->title . ']]></title>';
         $out .= '<link>' . $page->url . '</link>';
-        $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>', "", $page->description]) . ']]></description>';
+        $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description) . ']]></description>';
         $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
         $out .= '<guid>' . $page->url . '</guid>';
         if ($images && $image = $page->image(72, 72)) {
@@ -185,14 +197,20 @@ function xml($any = null) {
             }
         }
         $out .= '</item>';
+    } else {
+        $this->status(404);
     }
     $out .= '</channel>';
     $out .= '</rss>';
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->lot([
-        'Cache-Control' => 'private, max-age=' . $i,
-        'Expires' => \gmdate('D, d M Y H:i:s', \time() + $i) . ' GMT',
+    $this->lot($exist ? [
+        'Cache-Control' => 'max-age=' . $i . ', private',
+        'Expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
         'Pragma' => 'private'
+    ] : [
+        'Cache-Control' => 'max-age=0, must-revalidate, no-cache, no-store',
+        'Expires' => '0',
+        'Pragma' => 'no-cache'
     ]);
     $this->type('application/' . ($fn ? 'javascript' : 'rss+xml'));
     $this->content($fn ? $fn . '(' . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ');' : $out);
