@@ -3,7 +3,7 @@
 function json($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
     $t = $_SERVER['REQUEST_TIME'];
-    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim($state->path, '/'));
     $page = new \Page(\File::exist([
         $f . '.page',
         $f . '.archive'
@@ -25,7 +25,10 @@ function json($any = null) {
                 'i' => $i,
                 'sort' => $sort
             ]),
-            'description' => \str_replace(['<p>', '</p>'], "", $page->description ?? $state->description) ?: null,
+            'description' => \strtr($page->description ?? $state->description, [
+                '<p>' => "",
+                '</p>' => ""
+            ]) ?: null,
             'time' => (string) $page->time,
             'language' => $state->language
         ],
@@ -37,7 +40,10 @@ function json($any = null) {
             $tag = new \Tag($k);
             $out[0]['tags'][$tag->name] = [
                 'title' => $tag->title,
-                'description' => \str_replace(['<p>', '</p>'], "", $tag->description) ?: null,
+                'description' => \strtr($tag->description, [
+                    '<p>' => "",
+                    '</p>' => ""
+                ]) ?: null,
                 'time' => (string) $tag->time,
                 'id' => $tag->id
             ];
@@ -66,7 +72,10 @@ function json($any = null) {
             $page = new \Page($page);
             $out[1][$k] = [
                 'title' => $page->title,
-                'description' => \str_replace(['<p>', '</p>'], "", $page->description) ?: null,
+                'description' => \strtr($page->description, [
+                    '<p>' => "",
+                    '</p>' => ""
+                ]) ?: null,
                 'image' => $images ? $page->image(72, 72) : null,
                 'link' => $page->link,
                 'url' => $page->url,
@@ -81,7 +90,10 @@ function json($any = null) {
         $out[1] = [];
         $out[1][0] = [
             'title' => $page->title,
-            'description' => \str_replace(['<p>', '</p>'], "", $page->description) ?: null,
+            'description' => \strtr($page->description, [
+                '<p>' => "",
+                '</p>' => ""
+            ]) ?: null,
             'image' => $images ? $page->image(72, 72) : null,
             'link' => $page->link,
             'url' => $page->url,
@@ -111,7 +123,7 @@ function json($any = null) {
 function xml($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
     $t = $_SERVER['REQUEST_TIME'];
-    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim(\State::get('path'), '/'));
+    $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim($state->path, '/'));
     $page = new \Page(\File::exist([
         $f . '.page',
         $f . '.archive'
@@ -130,7 +142,10 @@ function xml($any = null) {
     $out .= '<generator>Mecha ' . \VERSION . '</generator>';
     $out .= '<title><![CDATA[' . ($exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
     $out .= '<link>' . $url . $url->path . '</link>';
-    $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description ?? $state->description) . ']]></description>';
+    $out .= '<description><![CDATA[' . \strtr($page->description ?? $state->description, [
+        '<p>' => "",
+        '</p>' => ""
+    ]) . ']]></description>';
     $out .= '<lastBuildDate>' . \date('r', $t) . '</lastBuildDate>';
     $out .= '<language>' . $state->language . '</language>';
     $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
@@ -160,7 +175,10 @@ function xml($any = null) {
             $out .= '<item>';
             $out .= '<title><![CDATA[' . $page->title . ']]></title>';
             $out .= '<link>' . $page->url . '</link>';
-            $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description) . ']]></description>';
+            $out .= '<description><![CDATA[' . \strtr($page->description, [
+                '<p>' => "",
+                '</p>' => ""
+            ]) . ']]></description>';
             $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
             $out .= '<guid>' . $page->url . '</guid>';
             if ($images && $image = $page->image(72, 72)) {
@@ -181,7 +199,10 @@ function xml($any = null) {
         $out .= '<item>';
         $out .= '<title><![CDATA[' . $page->title . ']]></title>';
         $out .= '<link>' . $page->url . '</link>';
-        $out .= '<description><![CDATA[' . \str_replace(['<p>', '</p>'], "", $page->description) . ']]></description>';
+        $out .= '<description><![CDATA[' . \strtr($page->description, [
+            '<p>' => "",
+            '</p>' => ""
+        ]) . ']]></description>';
         $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
         $out .= '<guid>' . $page->url . '</guid>';
         if ($images && $image = $page->image(72, 72)) {

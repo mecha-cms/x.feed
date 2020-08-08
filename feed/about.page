@@ -3,7 +3,7 @@ title: Feed
 description: Add RSS and JSON feed features.
 author: Taufik Nurrohman
 type: Markdown
-version: 2.4.2
+version: 2.4.3
 
 use:
   '.\lot\x\page': 1
@@ -32,5 +32,5 @@ function render(json) {
     console.log(json);
 }
 </script>
-<script src="http://127.0.0.1/article/feed.json?chunk=5&fn=render"></script>
+<script src="http://127.0.0.1/article/feed.json?chunk=5&amp;fn=render"></script>
 ~~~
