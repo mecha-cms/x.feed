@@ -1,4 +1,4 @@
-<?php namespace _\lot\x\feed;
+<?php namespace x\feed;
 
 function json($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
@@ -12,7 +12,12 @@ function json($any = null) {
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
-    $fn = \Get::get('fn');
+    $fire = \Get::get('fire');
+    // Validate function name
+    if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
+        $this->status(403);
+        $this->content("");
+    }
     $images = null !== \State::get('x.image');
     $tags = null !== \State::get('x.tag');
     $out = [
@@ -25,10 +30,7 @@ function json($any = null) {
                 'i' => $i,
                 'sort' => $sort
             ]),
-            'description' => \strtr($page->description ?? $state->description, [
-                '<p>' => "",
-                '</p>' => ""
-            ]) ?: null,
+            'description' => ($page->description ?? $state->description) ?: null,
             'time' => (string) $page->time,
             'language' => $state->language
         ],
@@ -40,10 +42,7 @@ function json($any = null) {
             $tag = new \Tag($k);
             $out[0]['tags'][$tag->name] = [
                 'title' => $tag->title,
-                'description' => \strtr($tag->description, [
-                    '<p>' => "",
-                    '</p>' => ""
-                ]) ?: null,
+                'description' => $tag->description ?: null,
                 'time' => (string) $tag->time,
                 'id' => $tag->id
             ];
@@ -72,10 +71,7 @@ function json($any = null) {
             $page = new \Page($page);
             $out[1][$k] = [
                 'title' => $page->title,
-                'description' => \strtr($page->description, [
-                    '<p>' => "",
-                    '</p>' => ""
-                ]) ?: null,
+                'description' => $page->description ?: null,
                 'image' => $images ? $page->image(72, 72) : null,
                 'link' => $page->link,
                 'url' => $page->url,
@@ -90,10 +86,7 @@ function json($any = null) {
         $out[1] = [];
         $out[1][0] = [
             'title' => $page->title,
-            'description' => \strtr($page->description, [
-                '<p>' => "",
-                '</p>' => ""
-            ]) ?: null,
+            'description' => $page->description ?: null,
             'image' => $images ? $page->image(72, 72) : null,
             'link' => $page->link,
             'url' => $page->url,
@@ -108,16 +101,16 @@ function json($any = null) {
     }
     $i = 60 * 60 * 24; // Cache output for a day
     $this->lot($exist ? [
-        'Cache-Control' => 'max-age=' . $i . ', private',
-        'Expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
-        'Pragma' => 'private'
+        'cache-control' => 'max-age=' . $i . ', private',
+        'expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
+        'pragma' => 'private'
     ] : [
-        'Cache-Control' => 'max-age=0, must-revalidate, no-cache, no-store',
-        'Expires' => '0',
-        'Pragma' => 'no-cache'
+        'cache-control' => 'max-age=0, must-revalidate, no-cache, no-store',
+        'expires' => '0',
+        'pragma' => 'no-cache'
     ]);
-    $this->type('application/' . ($fn ? 'javascript' : 'json'));
-    $this->content(($fn ? $fn . '(' : "") . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ($fn ? ');' : ""));
+    $this->type('application/' . ($fire ? 'javascript' : 'json'));
+    $this->content(($fire ? $fire . '(' : "") . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : ""));
 }
 
 function xml($any = null) {
@@ -132,7 +125,12 @@ function xml($any = null) {
     $chunk = \Get::get('chunk') ?? 25;
     $i = \Get::get('i') ?? 1;
     $sort = \Get::get('sort') ?? [-1, 'time'];
-    $fn = \Get::get('fn');
+    $fire = \Get::get('fire');
+    // Validate function name
+    if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
+        $this->status(403);
+        $this->content("");
+    }
     $images = null !== \State::get('x.image');
     $tags = null !== \State::get('x.tag');
     $out = "";
@@ -142,10 +140,7 @@ function xml($any = null) {
     $out .= '<generator>Mecha ' . \VERSION . '</generator>';
     $out .= '<title><![CDATA[' . ($exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
     $out .= '<link>' . $url . $url->path . '</link>';
-    $out .= '<description><![CDATA[' . \strtr($page->description ?? $state->description, [
-        '<p>' => "",
-        '</p>' => ""
-    ]) . ']]></description>';
+    $out .= '<description><![CDATA[' . ($page->description ?? $state->description) . ']]></description>';
     $out .= '<lastBuildDate>' . \date('r', $t) . '</lastBuildDate>';
     $out .= '<language>' . $state->language . '</language>';
     $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
@@ -175,10 +170,7 @@ function xml($any = null) {
             $out .= '<item>';
             $out .= '<title><![CDATA[' . $page->title . ']]></title>';
             $out .= '<link>' . $page->url . '</link>';
-            $out .= '<description><![CDATA[' . \strtr($page->description, [
-                '<p>' => "",
-                '</p>' => ""
-            ]) . ']]></description>';
+            $out .= '<description><![CDATA[' . $page->description . ']]></description>';
             $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
             $out .= '<guid>' . $page->url . '</guid>';
             if ($images && $image = $page->image(72, 72)) {
@@ -199,10 +191,7 @@ function xml($any = null) {
         $out .= '<item>';
         $out .= '<title><![CDATA[' . $page->title . ']]></title>';
         $out .= '<link>' . $page->url . '</link>';
-        $out .= '<description><![CDATA[' . \strtr($page->description, [
-            '<p>' => "",
-            '</p>' => ""
-        ]) . ']]></description>';
+        $out .= '<description><![CDATA[' . $page->description . ']]></description>';
         $out .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
         $out .= '<guid>' . $page->url . '</guid>';
         if ($images && $image = $page->image(72, 72)) {
@@ -225,16 +214,16 @@ function xml($any = null) {
     $out .= '</rss>';
     $i = 60 * 60 * 24; // Cache output for a day
     $this->lot($exist ? [
-        'Cache-Control' => 'max-age=' . $i . ', private',
-        'Expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
-        'Pragma' => 'private'
+        'cache-control' => 'max-age=' . $i . ', private',
+        'expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
+        'pragma' => 'private'
     ] : [
-        'Cache-Control' => 'max-age=0, must-revalidate, no-cache, no-store',
-        'Expires' => '0',
-        'Pragma' => 'no-cache'
+        'cache-control' => 'max-age=0, must-revalidate, no-cache, no-store',
+        'expires' => '0',
+        'pragma' => 'no-cache'
     ]);
-    $this->type('application/' . ($fn ? 'javascript' : 'rss+xml'));
-    $this->content($fn ? $fn . '(' . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ');' : $out);
+    $this->type('application/' . ($fire ? 'javascript' : 'rss+xml'));
+    $this->content($fire ? $fire . '(' . \json_encode($out, \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE) . ');' : $out);
 }
 
 \Route::set(['feed.json', '*/feed.json'], __NAMESPACE__ . "\\json", 10);

@@ -3,7 +3,7 @@ title: Feed
 description: Add RSS and JSON feed features.
 author: Taufik Nurrohman
 type: Markdown
-version: 2.4.3
+version: 2.5.0
 
 use:
   '.\lot\x\page': 1
@@ -20,7 +20,7 @@ use:
 Some URL parameters are available to manipulate the feed results, so that you can allow third party applications to fetch your data:
 
  - `chunk` → Determine how many pages to show per request. Default is `25`.
- - `fn` → JavaScript callback function name that bounds to the `window` object.
+ - `fire` → JavaScript callback function name that bounds to the `window` object.
  - `i` → Current page offset. Default is `1`.
  - `sort` → Default is `[-1,"time"]` to sort pages descending by the `time` data.
 
@@ -32,5 +32,5 @@ function render(json) {
     console.log(json);
 }
 </script>
-<script src="http://127.0.0.1/article/feed.json?chunk=5&amp;fn=render"></script>
+<script src="http://127.0.0.1/article/feed.json?chunk=5&amp;fire=render"></script>
 ~~~

@@ -1,4 +1,4 @@
-<?php namespace _\lot\x;
+<?php namespace x;
 
 function feed($content) {
     global $state, $url;
@@ -7,6 +7,6 @@ function feed($content) {
 
 // Insert some HTML `<link>` that maps to the feed resource
 if (!\has(['feed.json', 'feed.xml'], \basename($url->path))) {
-    // Make sure to run the hook before `_\lot\x\minify`
+    // Make sure to run the hook before `x\minify`
     \Hook::set('content', __NAMESPACE__ . "\\feed", 1.9);
 }
