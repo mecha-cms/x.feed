@@ -2,17 +2,19 @@
 
 function json($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
-    $t = $_SERVER['REQUEST_TIME'];
+    $chunk = \Get::get('chunk') ?? 25;
+    $deep = \Get::get('deep') ?? 0;
     $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim($state->path, '/'));
+    $fire = \Get::get('fire');
+    $i = \Get::get('i') ?? 1;
     $page = new \Page(\File::exist([
         $f . '.page',
         $f . '.archive'
     ]) ?: null);
-    $exist = $page->exist;
-    $chunk = \Get::get('chunk') ?? 25;
-    $i = \Get::get('i') ?? 1;
-    $sort = \Get::get('sort') ?? [-1, 'time'];
-    $fire = \Get::get('fire');
+    $page_exist = $page->exist;
+    $q = \Get::get('q');
+    $sort = \array_replace([-1, 'time'], \Get::get('sort') ?? []);
+    $t = $_SERVER['REQUEST_TIME'];
     // Validate function name
     if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
         $this->status(403);
@@ -23,10 +25,9 @@ function json($any = null) {
     $out = [
         0 => [
             'generator' => 'Mecha ' . \VERSION,
-            'title' => ($exist ? $page->title : \i('Error')) . ' | ' . $state->title,
+            'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
             'url' => $url . $url->path,
             'current' => $url->clean . $url->query('&', [
-                'chunk' => $chunk,
                 'i' => $i,
                 'sort' => $sort
             ]),
@@ -49,26 +50,31 @@ function json($any = null) {
             \ksort($out[0]['tags']);
         }
     }
-    $pages = \Pages::from($f, 'page')->sort($sort);
-    $pages = \array_chunk($pages->get(), $chunk);
+    $pages = [];
+    $count = 0;
+    foreach ($q ? \k($f, 'page', $deep, \preg_split('/\s+/', $q), true) : \g($f, 'page', $deep) as $k => $v) {
+        $p = new \Page($k);
+        $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
+        ++$count;
+    }
+    $out[0]['count'] = $count;
+    $pages = (new \Anemon($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
     if ($i > 1) {
         $out[0]['prev'] = $url->clean . $url->query('&', [
-            'chunk' => $chunk,
             'i' => $i - 1,
             'sort' => $sort
         ]);
     }
     if (!empty($pages[$i])) {
         $out[0]['next'] = $url->clean . $url->query('&', [
-            'chunk' => $chunk,
             'i' => $i + 1,
             'sort' => $sort
         ]);
     }
     if (!empty($pages[$i - 1])) {
         $out[1] = [];
-        foreach ($pages[$i - 1] as $k => $page) {
-            $page = new \Page($page);
+        foreach (\array_keys($pages[$i - 1]) as $k => $v) {
+            $page = new \Page($v);
             $out[1][$k] = [
                 'title' => $page->title,
                 'description' => $page->description ?: null,
@@ -82,7 +88,7 @@ function json($any = null) {
                 $out[1][$k]['kind'] = (array) $page->kind;
             }
         }
-    } else if ($exist) {
+    } else if ($page_exist) {
         $out[1] = [];
         $out[1][0] = [
             'title' => $page->title,
@@ -100,7 +106,7 @@ function json($any = null) {
         $this->status(404);
     }
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->lot($exist ? [
+    $this->lot($page_exist ? [
         'cache-control' => 'max-age=' . $i . ', private',
         'expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
         'pragma' => 'private'
@@ -115,17 +121,19 @@ function json($any = null) {
 
 function xml($any = null) {
     extract($GLOBALS, \EXTR_SKIP);
-    $t = $_SERVER['REQUEST_TIME'];
+    $chunk = \Get::get('chunk') ?? 25;
+    $deep = \Get::get('deep') ?? 0;
     $f = \LOT . \DS . 'page' . \DS . ($any ?? \trim($state->path, '/'));
+    $fire = \Get::get('fire');
+    $i = \Get::get('i') ?? 1;
     $page = new \Page(\File::exist([
         $f . '.page',
         $f . '.archive'
     ]) ?: null);
-    $exist = $page->exist;
-    $chunk = \Get::get('chunk') ?? 25;
-    $i = \Get::get('i') ?? 1;
-    $sort = \Get::get('sort') ?? [-1, 'time'];
-    $fire = \Get::get('fire');
+    $page_exist = $page->exist;
+    $q = \Get::get('q');
+    $sort = \array_replace([-1, 'time'], \Get::get('sort') ?? []);
+    $t = $_SERVER['REQUEST_TIME'];
     // Validate function name
     if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
         $this->status(403);
@@ -138,34 +146,35 @@ function xml($any = null) {
     $out .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
     $out .= '<channel>';
     $out .= '<generator>Mecha ' . \VERSION . '</generator>';
-    $out .= '<title><![CDATA[' . ($exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
+    $out .= '<title><![CDATA[' . ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
     $out .= '<link>' . $url . $url->path . '</link>';
     $out .= '<description><![CDATA[' . ($page->description ?? $state->description) . ']]></description>';
     $out .= '<lastBuildDate>' . \date('r', $t) . '</lastBuildDate>';
     $out .= '<language>' . $state->language . '</language>';
     $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
-        'chunk' => $chunk,
         'i' => $i,
         'sort' => $sort
     ]) . '" rel="self"/>';
-    $pages = \Pages::from($f, 'page')->sort($sort);
-    $pages = \array_chunk($pages->get(), $chunk);
+    $pages = [];
+    foreach ($q ? \k($f, 'page', $deep, \preg_split('/\s+/', $q), true) : \g($f, 'page', $deep) as $k => $v) {
+        $p = new \Page($k);
+        $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
+    }
+    $pages = (new \Anemon($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
     if ($i > 1) {
         $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
-            'chunk' => $chunk,
             'i' => $i - 1,
             'sort' => $sort
         ]) . '" rel="prev"/>';
     }
     if (!empty($pages[$i])) {
         $out .= '<atom:link href="' . $url->clean . $url->query('&amp;', [
-            'chunk' => $chunk,
             'i' => $i + 1,
             'sort' => $sort
         ]) . '" rel="next"/>';
     }
     if (!empty($pages[$i - 1])) {
-        foreach ($pages[$i - 1] as $k => $v) {
+        foreach (\array_keys($pages[$i - 1]) as $k => $v) {
             $page = new \Page($v);
             $out .= '<item>';
             $out .= '<title><![CDATA[' . $page->title . ']]></title>';
@@ -187,7 +196,7 @@ function xml($any = null) {
             }
             $out .= '</item>';
         }
-    } else if ($exist) {
+    } else if ($page_exist) {
         $out .= '<item>';
         $out .= '<title><![CDATA[' . $page->title . ']]></title>';
         $out .= '<link>' . $page->url . '</link>';
@@ -213,7 +222,7 @@ function xml($any = null) {
     $out .= '</channel>';
     $out .= '</rss>';
     $i = 60 * 60 * 24; // Cache output for a day
-    $this->lot($exist ? [
+    $this->lot($page_exist ? [
         'cache-control' => 'max-age=' . $i . ', private',
         'expires' => \gmdate('D, d M Y H:i:s', $t + $i) . ' GMT',
         'pragma' => 'private'
