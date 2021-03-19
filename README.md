@@ -4,7 +4,7 @@ Feed Extension for Mecha
 Release Notes
 -------------
 
-### main
+### 2.5.0
 
  - Added ability to filter the feed results by utilizing the `q` parameter to search.
  - Added ability to recurse the feed results by utilizing the `deep` parameter.
