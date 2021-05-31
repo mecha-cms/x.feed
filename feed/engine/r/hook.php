@@ -1,8 +1,8 @@
 <?php namespace x;
 
 function feed($content) {
-    global $state, $url;
-    return \str_replace('</head>', '<link href="' . $url->clean . '/feed.xml" rel="alternate" type="application/rss+xml" title="' . \i('RSS') . ' | ' . \w($state->title) . '"></head>', $content);
+    extract($GLOBALS, \EXTR_SKIP);
+    return \strtr($content, ['</head>' => '<link href="' . $url->clean . '/feed.xml" rel="alternate" type="application/rss+xml" title="' . \i('RSS') . ' | ' . \w($state->title) . '"></head>']);
 }
 
 // Insert some HTML `<link>` that maps to the feed resource
