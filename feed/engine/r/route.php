@@ -8,8 +8,8 @@ function json($any = null) {
     $fire = \Get::get('fire');
     $i = \Get::get('i') ?? 1;
     $page = new \Page(\File::exist([
-        $f . '.page',
-        $f . '.archive'
+        $f . '.archive',
+        $f . '.page'
     ]) ?: null);
     $page_exist = $page->exist;
     $q = \Get::get('q');
@@ -24,16 +24,16 @@ function json($any = null) {
     $tags = null !== \State::get('x.tag');
     $out = [
         0 => [
-            'generator' => 'Mecha ' . \VERSION,
-            'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
-            'url' => $url . $url->path,
             'current' => $url->clean . $url->query('&', [
                 'i' => $i,
                 'sort' => $sort
             ]),
             'description' => ($page->description ?? $state->description) ?: null,
+            'generator' => 'Mecha ' . \VERSION,
+            'language' => $state->language,
             'time' => (string) $page->time,
-            'language' => $state->language
+            'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
+            'url' => $url . $url->path
         ],
         1 => null
     ];
@@ -76,13 +76,13 @@ function json($any = null) {
         foreach (\array_keys($pages[$i - 1]) as $k => $v) {
             $page = new \Page($v);
             $out[1][$k] = [
-                'title' => $page->title,
                 'description' => $page->description ?: null,
+                'id' => $page->id,
                 'image' => $images ? $page->image(72, 72) : null,
                 'link' => $page->link,
-                'url' => $page->url,
                 'time' => (string) $page->time,
-                'id' => $page->id
+                'title' => $page->title,
+                'url' => $page->url
             ];
             if ($tags) {
                 $out[1][$k]['kind'] = (array) $page->kind;
@@ -91,13 +91,13 @@ function json($any = null) {
     } else if ($page_exist) {
         $out[1] = [];
         $out[1][0] = [
-            'title' => $page->title,
             'description' => $page->description ?: null,
+            'id' => $page->id,
             'image' => $images ? $page->image(72, 72) : null,
             'link' => $page->link,
-            'url' => $page->url,
             'time' => (string) $page->time,
-            'id' => $page->id
+            'title' => $page->title,
+            'url' => $page->url
         ];
         if ($tags) {
             $out[1][0]['kind'] = (array) $page->kind;
@@ -127,8 +127,8 @@ function xml($any = null) {
     $fire = \Get::get('fire');
     $i = \Get::get('i') ?? 1;
     $page = new \Page(\File::exist([
-        $f . '.page',
-        $f . '.archive'
+        $f . '.archive',
+        $f . '.page'
     ]) ?: null);
     $page_exist = $page->exist;
     $q = \Get::get('q');
