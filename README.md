@@ -13,4 +13,4 @@ Release Notes
 ### 2.4.2
 
  - Added `image` property to feeds.
- - Removed sitemap feature. The sitemap feature should be added to a separate extension named `sitemap`.
+ - Removed sitemap feature. The sitemap feature should be added to a separate extension named [`sitemap`](https://github.com/mecha-cms/x.sitemap).
