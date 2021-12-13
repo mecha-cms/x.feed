@@ -3,7 +3,7 @@ title: Feed
 description: Add RSS and JSON feed features.
 author: Taufik Nurrohman
 type: Markdown
-version: 2.5.1
+version: 3.0.0
 
 use:
   '.\lot\x\page': 1
@@ -20,10 +20,10 @@ use:
 Some URL parameters are available to manipulate the feed results, so that you can allow third party applications to fetch your data:
 
  - `chunk` → Determine how many pages to show per request. Default is `25`.
+ - `current` → Current page offset. Default is `1`.
  - `deep` → Determine how many folder path to recurse. Default is `0`.
  - `fire` → JavaScript callback function name that bounds to the `window` object.
- - `i` → Current page offset. Default is `1`.
- - `q` → Determine the search query to filter the feed results.
+ - `query` → Determine the search query to filter the feed results.
  - `sort` → Default is `[-1,"time"]` to sort pages descending by the `time` data.
 
 Example API usage:

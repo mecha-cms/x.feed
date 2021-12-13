@@ -4,6 +4,10 @@ Feed Extension for [Mecha](https://github.com/mecha-cms/mecha)
 Release Notes
 -------------
 
+### 3.0.0
+
+ - [x] Updated for Mecha 3.0.0.
+
 ### 2.5.1
 
  - Added ability to filter the feed results by utilizing the `q` parameter to search.
