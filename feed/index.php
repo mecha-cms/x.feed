@@ -40,16 +40,16 @@ namespace x\feed\route {
         $status = 200;
         $lot = [
             0 => [
-                'current' => $url->current(false, false) . $url->query([
+                'current' => \Hook::fire('link', [$url->current(false, false) . $url->query([
                     'current' => $current,
                     'sort' => $sort
-                ]),
+                ])]),
                 'description' => ($page->description ?? $state->description) ?: null,
                 'generator' => 'Mecha ' . \VERSION,
                 'language' => $state->language,
                 'time' => (string) $page->time,
                 'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
-                'url' => $url->current(false, false)
+                'url' => \Hook::fire('link', [$url->current(false, false)])
             ],
             1 => null
         ];
@@ -76,16 +76,16 @@ namespace x\feed\route {
         $lot[0]['count'] = $count;
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if ($current > 1) {
-            $lot[0]['prev'] = $url->current(false, false) . $url->query([
+            $lot[0]['prev'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
                 'current' => $current - 1,
                 'sort' => $sort
-            ]);
+            ])]);
         }
         if (!empty($pages[$current])) {
-            $lot[0]['next'] = $url->current(false, false) . $url->query([
+            $lot[0]['next'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
                 'current' => $current + 1,
                 'sort' => $sort
-            ]);
+            ])]);
         }
         if (!empty($pages[$current - 1])) {
             $lot[1] = [];
@@ -94,11 +94,11 @@ namespace x\feed\route {
                 $lot[1][$k] = [
                     'description' => $page->description ?: null,
                     'id' => $page->id,
-                    'image' => $x_image ? $page->image(72, 72) : null,
-                    'link' => $page->link,
+                    'image' => \Hook::fire('link', [$x_image ? $page->image(72, 72) : null]),
+                    'link' => \Hook::fire('link', [$page->link]),
                     'time' => (string) $page->time,
                     'title' => $page->title,
-                    'url' => $page->url
+                    'url' => \Hook::fire('link', [$page->url])
                 ];
                 if ($x_tag) {
                     $lot[1][$k]['kind'] = (array) $page->kind;
@@ -109,11 +109,11 @@ namespace x\feed\route {
             $lot[1][0] = [
                 'description' => $page->description ?: null,
                 'id' => $page->id,
-                'image' => $x_image ? $page->image(72, 72) : null,
-                'link' => $page->link,
+                'image' => \Hook::fire('link', [$x_image ? $page->image(72, 72) : null]),
+                'link' => \Hook::fire('link', [$page->link]),
                 'time' => (string) $page->time,
                 'title' => $page->title,
-                'url' => $page->url
+                'url' => \Hook::fire('link', [$page->url])
             ];
             if ($x_tag) {
                 $lot[1][0]['kind'] = (array) $page->kind;
@@ -125,9 +125,6 @@ namespace x\feed\route {
         \ob_start();
         \ob_start("\\ob_gzhandler");
         $content = ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
-        $content = \preg_replace_callback('/"https?:\\\\\/\\\\\/\S+?"/', static function($m) {
-            return \json_encode(\Hook::fire('link', [\json_decode($m[0])]), \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE);
-        }, $content);
         echo \Hook::fire('content', [$content]);
         \ob_end_flush();
         $size = \ob_get_length();
@@ -173,19 +170,19 @@ namespace x\feed\route {
         $x_tag = isset($state->x->tag);
         $status = 200;
         $content = "";
-        $content .= '<?xml version="1.0" encoding="UTF-8"?>';
+        $content .= '<?xml version="1.0" encoding="utf-8"?>';
         $content .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
         $content .= '<channel>';
         $content .= '<generator>Mecha ' . \VERSION . '</generator>';
         $content .= '<title><![CDATA[' . ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title . ']]></title>';
-        $content .= '<link>' . $url->clean(false, false) . '</link>';
+        $content .= '<link>' . \Hook::fire('link', [$url->clean(false, false)]) . '</link>';
         $content .= '<description><![CDATA[' . ($page->description ?? $state->description) . ']]></description>';
         $content .= '<lastBuildDate>' . \date('r', $_SERVER['REQUEST_TIME']) . '</lastBuildDate>';
         $content .= '<language>' . $state->language . '</language>';
-        $content .= '<atom:link href="' . $url->current(false, false) . \htmlspecialchars($url->query([
+        $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
             'current' => $current,
             'sort' => $sort
-        ])) . '" rel="self"/>';
+        ]))]) . '" rel="self"/>';
         $pages = [];
         foreach ($query ? \k($folder, 'page', $deep, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep) as $k => $v) {
             $p = new \Page($k);
@@ -193,36 +190,36 @@ namespace x\feed\route {
         }
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if ($current > 1) {
-            $content .= '<atom:link href="' . $url->current(false, false) . \htmlspecialchars($url->query([
+            $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
                 'current' => $current - 1,
                 'sort' => $sort
-            ])) . '" rel="prev"/>';
+            ]))]) . '" rel="prev"/>';
         }
         if (!empty($pages[$current])) {
-            $content .= '<atom:link href="' . $url->current(false, false) . \htmlspecialchars($url->query([
+            $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
                 'current' => $current + 1,
                 'sort' => $sort
-            ])) . '" rel="next"/>';
+            ]))]) . '" rel="next"/>';
         }
         if (!empty($pages[$current - 1])) {
             foreach (\array_keys($pages[$current - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $content .= '<item>';
                 $content .= '<title><![CDATA[' . $page->title . ']]></title>';
-                $content .= '<link>' . $page->url . '</link>';
+                $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
                 $content .= '<description><![CDATA[' . $page->description . ']]></description>';
                 $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
-                $content .= '<guid>' . $page->url . '</guid>';
+                $content .= '<guid>' . \Hook::fire('link', [$page->url]) . '</guid>';
                 if ($x_image && $image = $page->image(72, 72)) {
                     $content .= '<image>';
                     $content .= '<title>' . \basename($link = $page->image) . '</title>';
-                    $content .= '<url>' . $image . '</url>';
-                    $content .= '<link>' . $link . '</link>';
+                    $content .= '<url>' . \Hook::fire('link', [$image]) . '</url>';
+                    $content .= '<link>' . \Hook::fire('link', [$link]) . '</link>';
                     $content .= '</image>';
                 }
                 if ($x_tag) {
                     foreach ($page->tags as $tag) {
-                        $content .= '<category domain="' . $tag->link . '"><![CDATA[' . $tag->title . ']]></category>';
+                        $content .= '<category domain="' . \Hook::fire('link', [$tag->link]) . '"><![CDATA[' . $tag->title . ']]></category>';
                     }
                 }
                 $content .= '</item>';
@@ -230,20 +227,20 @@ namespace x\feed\route {
         } else if ($page_exist) {
             $content .= '<item>';
             $content .= '<title><![CDATA[' . $page->title . ']]></title>';
-            $content .= '<link>' . $page->url . '</link>';
+            $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
             $content .= '<description><![CDATA[' . $page->description . ']]></description>';
             $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
-            $content .= '<guid>' . $page->url . '</guid>';
+            $content .= '<guid>' . \Hook::fire('link', [$page->url]) . '</guid>';
             if ($x_image && $image = $page->image(72, 72)) {
                 $content .= '<image>';
                 $content .= '<title>' . \basename($link = $page->image) . '</title>';
-                $content .= '<url>' . $image . '</url>';
-                $content .= '<link>' . $link . '</link>';
+                $content .= '<url>' . \Hook::fire('link', [$image]) . '</url>';
+                $content .= '<link>' . \Hook::fire('link', [$link]) . '</link>';
                 $content .= '</image>';
             }
             if ($x_tag) {
                 foreach ($page->tags as $tag) {
-                    $content .= '<category domain="' . $tag->link . '"><![CDATA[' . $tag->title . ']]></category>';
+                    $content .= '<category domain="' . \Hook::fire('link', [$tag->link]) . '"><![CDATA[' . $tag->title . ']]></category>';
                 }
             }
             $content .= '</item>';
@@ -256,11 +253,6 @@ namespace x\feed\route {
         \ob_start();
         \ob_start("\\ob_gzhandler");
         $content = $fire ? $fire . '(' . \json_encode($content, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ');' : $content;
-        $content = $fire ? \preg_replace_callback('/"https?:\\\\\/\\\\\/\S+?"/', static function($m) {
-            return \json_encode(\Hook::fire('link', [\json_decode($m[0])]), \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE);
-        }, $content) : \preg_replace_callback('/(?<=[>"])https?:\/\/\S+?(?=["<])/', static function($m) {
-            return \Hook::fire('link', [$m[0]]);
-        }, $content);
         echo \Hook::fire('content', [$content]);
         \ob_end_flush();
         $size = \ob_get_length();
