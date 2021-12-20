@@ -2,7 +2,7 @@
 
 namespace x {
     function feed($content) {
-        extract($GLOBALS, \EXTR_SKIP);
+        \extract($GLOBALS, \EXTR_SKIP);
         return \strtr($content, ['</head>' => '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" type="application/rss+xml" title="' . \i('RSS') . ' | ' . \w($state->title) . '"></head>']);
     }
     // Insert some HTML `<link>` that maps to the feed resource
@@ -14,7 +14,7 @@ namespace x {
 
 namespace x\feed\route {
     function json($path) {
-        extract($GLOBALS, \EXTR_SKIP);
+        \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $current = $_GET['current'] ?? 1;
         $deep = $_GET['deep'] ?? 0;
@@ -145,7 +145,7 @@ namespace x\feed\route {
         exit;
     }
     function xml($path) {
-        extract($GLOBALS, \EXTR_SKIP);
+        \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $current = $_GET['current'] ?? 1;
         $deep = $_GET['deep'] ?? 0;
