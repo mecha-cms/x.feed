@@ -1,6 +1,7 @@
 ---
 title: Feed
 description: Add RSS and JSON feed features.
+icon: 'M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M7.5,15A1.5,1.5 0 0,0 6,16.5A1.5,1.5 0 0,0 7.5,18A1.5,1.5 0 0,0 9,16.5A1.5,1.5 0 0,0 7.5,15M6,10V12A6,6 0 0,1 12,18H14A8,8 0 0,0 6,10M6,6V8A10,10 0 0,1 16,18H18A12,12 0 0,0 6,6Z'
 author: Taufik Nurrohman
 type: Markdown
 version: 3.0.0
@@ -20,9 +21,9 @@ use:
 Some URL parameters are available to manipulate the feed results, so that you can allow third party applications to fetch your data:
 
  - `chunk` → Determine how many pages to show per request. Default is `25`.
- - `current` → Current page offset. Default is `1`.
  - `deep` → Determine how many folder path to recurse. Default is `0`.
  - `fire` → JavaScript callback function name that bounds to the `window` object.
+ - `part` → Current page offset. Default is `1`.
  - `query` → Determine the search query to filter the feed results.
  - `sort` → Default is `[-1,"time"]` to sort pages descending by the `time` data.
 

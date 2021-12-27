@@ -16,9 +16,9 @@ namespace x\feed\route {
     function json($path) {
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
-        $current = $_GET['current'] ?? 1;
         $deep = $_GET['deep'] ?? 0;
         $fire = $_GET['fire'] ?? null;
+        $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
         $path = \trim($path ?? "", '/');
@@ -40,8 +40,8 @@ namespace x\feed\route {
         $status = 200;
         $lot = [
             0 => [
-                'current' => \Hook::fire('link', [$url->current(false, false) . $url->query([
-                    'current' => $current,
+                'part' => \Hook::fire('link', [$url->current(false, false) . $url->query([
+                    'part' => $part,
                     'sort' => $sort
                 ])]),
                 'description' => ($page->description ?? $state->description) ?: null,
@@ -75,21 +75,21 @@ namespace x\feed\route {
         }
         $lot[0]['count'] = $count;
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
-        if ($current > 1) {
+        if ($part > 1) {
             $lot[0]['prev'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
-                'current' => $current - 1,
+                'part' => $part - 1,
                 'sort' => $sort
             ])]);
         }
-        if (!empty($pages[$current])) {
+        if (!empty($pages[$part])) {
             $lot[0]['next'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
-                'current' => $current + 1,
+                'part' => $part + 1,
                 'sort' => $sort
             ])]);
         }
-        if (!empty($pages[$current - 1])) {
+        if (!empty($pages[$part - 1])) {
             $lot[1] = [];
-            foreach (\array_keys($pages[$current - 1]) as $k => $v) {
+            foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $lot[1][$k] = [
                     'description' => $page->description ?: null,
@@ -147,9 +147,9 @@ namespace x\feed\route {
     function xml($path) {
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
-        $current = $_GET['current'] ?? 1;
         $deep = $_GET['deep'] ?? 0;
         $fire = $_GET['fire'] ?? null;
+        $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
         $path = \trim($path ?? "", '/');
@@ -180,7 +180,7 @@ namespace x\feed\route {
         $content .= '<lastBuildDate>' . \date('r', $_SERVER['REQUEST_TIME']) . '</lastBuildDate>';
         $content .= '<language>' . $state->language . '</language>';
         $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
-            'current' => $current,
+            'part' => $part,
             'sort' => $sort
         ]))]) . '" rel="self"/>';
         $pages = [];
@@ -189,20 +189,20 @@ namespace x\feed\route {
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
-        if ($current > 1) {
+        if ($part > 1) {
             $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
-                'current' => $current - 1,
+                'part' => $part - 1,
                 'sort' => $sort
             ]))]) . '" rel="prev"/>';
         }
-        if (!empty($pages[$current])) {
+        if (!empty($pages[$part])) {
             $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
-                'current' => $current + 1,
+                'part' => $part + 1,
                 'sort' => $sort
             ]))]) . '" rel="next"/>';
         }
-        if (!empty($pages[$current - 1])) {
-            foreach (\array_keys($pages[$current - 1]) as $k => $v) {
+        if (!empty($pages[$part - 1])) {
+            foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $content .= '<item>';
                 $content .= '<title><![CDATA[' . $page->title . ']]></title>';
