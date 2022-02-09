@@ -6,7 +6,7 @@ namespace x {
         return \strtr($content, ['</head>' => '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" type="application/rss+xml" title="' . \i('RSS') . ' | ' . \w($state->title) . '"></head>']);
     }
     // Insert some HTML `<link>` that maps to the feed resource
-    if (!\has(['feed.json', 'feed.xml'], \basename($url->path))) {
+    if (!\has(['feed.json', 'feed.xml'], \basename($url->path ?? ""))) {
         // Make sure to run the hook before `x\minify`
         \Hook::set('content', __NAMESPACE__ . "\\feed", 1.9);
     }
@@ -272,9 +272,9 @@ namespace x\feed\route {
         \Hook::fire('let');
         exit;
     }
-    if ('feed.json' === \basename($url->path)) {
+    if ('feed.json' === \basename($url->path ?? "")) {
         \Hook::set('route', __NAMESPACE__ . "\\json", 10);
-    } else if ('feed.xml' === \basename($url->path)) {
+    } else if ('feed.xml' === \basename($url->path ?? "")) {
         \Hook::set('route', __NAMESPACE__ . "\\xml", 10);
     }
 }
