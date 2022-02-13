@@ -15,6 +15,9 @@ namespace x {
 // <https://validator.w3.org/feed/docs/rss2.html>
 namespace x\feed\route {
     function json($content, $p) {
+        if (null !== $content) {
+            return $content;
+        }
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $deep = $_GET['deep'] ?? 0;
@@ -133,6 +136,9 @@ namespace x\feed\route {
         return ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
     }
     function xml($content, $p) {
+        if (null !== $content) {
+            return $content;
+        }
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $deep = $_GET['deep'] ?? 0;
