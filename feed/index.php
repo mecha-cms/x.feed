@@ -3,17 +3,18 @@
 namespace x {
     function feed($content) {
         \extract($GLOBALS, \EXTR_SKIP);
-        return \strtr($content, ['</head>' => '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" type="application/rss+xml" title="' . \i('RSS') . ' | ' . \w($state->title) . '"></head>']);
+        return \strtr($content ?? "", ['</head>' => '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml"></head>']);
     }
     // Insert some HTML `<link>` that maps to the feed resource
     if (!\has(['feed.json', 'feed.xml'], \basename($url->path ?? ""))) {
-        // Make sure to run the hook before `x\minify`
-        \Hook::set('content', __NAMESPACE__ . "\\feed", 1.9);
+        // Make sure to run the hook before `x\link\content`
+        \Hook::set('content', __NAMESPACE__ . "\\feed", -1);
     }
 }
 
+// <https://validator.w3.org/feed/docs/rss2.html>
 namespace x\feed\route {
-    function json($path) {
+    function json($content, $p) {
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $deep = $_GET['deep'] ?? 0;
@@ -21,9 +22,9 @@ namespace x\feed\route {
         $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim($path ?? "", '/');
+        $path = \trim(\dirname($p ?? ""), '/');
         $route = \trim($state->route ?? "", '/');
-        $folder = \dirname(\LOT . \D . 'page' . \D . ($path ?: $route));
+        $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
         $page = new \Page(\exist([
             $folder . '.archive',
             $folder . '.page'
@@ -32,15 +33,14 @@ namespace x\feed\route {
         // Validate function name
         if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
             \status(403);
-            echo "";
-            exit;
+            return "";
         }
         $x_image = isset($state->x->image);
         $x_tag = isset($state->x->tag);
         $status = 200;
         $lot = [
             0 => [
-                'part' => \Hook::fire('link', [$url->current(false, false) . $url->query([
+                'current' => \Hook::fire('link', [$url->current(false, false) . $url->query([
                     'part' => $part,
                     'sort' => $sort
                 ])]),
@@ -58,22 +58,20 @@ namespace x\feed\route {
             foreach (\g(\LOT . \D . 'tag', 'page') as $k => $v) {
                 $tag = new \Tag($k);
                 $lot[0]['tags'][$tag->name] = [
-                    'title' => $tag->title,
                     'description' => $tag->description ?: null,
+                    'id' => $tag->id,
                     'time' => (string) $tag->time,
-                    'id' => $tag->id
+                    'title' => $tag->title
                 ];
                 \ksort($lot[0]['tags']);
             }
         }
         $pages = [];
-        $count = 0;
         foreach ($query ? \k($folder, 'page', $deep, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep) as $k => $v) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
-            ++$count;
         }
-        $lot[0]['count'] = $count;
+        $lot[0]['total'] = \count($pages);
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if ($part > 1) {
             $lot[0]['prev'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
@@ -122,29 +120,19 @@ namespace x\feed\route {
             $status = 404;
         }
         $age = 60 * 60 * 24; // Cache output for a day
-        \ob_start();
-        \ob_start("\\ob_gzhandler");
-        $content = ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
-        echo \Hook::fire('content', [$content]);
-        \ob_end_flush();
-        $size = \ob_get_length();
         \status($status, $page_exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
-            'content-length' => $size,
             'expires' => \gmdate('D, d M Y H:i:s', $age + $_SERVER['REQUEST_TIME']) . ' GMT',
             'pragma' => 'private'
         ] : [
             'cache-control' => 'max-age=0, must-revalidate, no-cache, no-store',
-            'content-length' => $size,
             'expires' => '0',
             'pragma' => 'no-cache'
         ]);
         \type('application/' . ($fire ? 'javascript' : 'json'));
-        echo \ob_get_clean();
-        \Hook::fire('let');
-        exit;
+        return ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
     }
-    function xml($path) {
+    function xml($content, $p) {
         \extract($GLOBALS, \EXTR_SKIP);
         $chunk = $_GET['chunk'] ?? 25;
         $deep = $_GET['deep'] ?? 0;
@@ -152,9 +140,9 @@ namespace x\feed\route {
         $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim($path ?? "", '/');
+        $path = \trim(\dirname($p ?? ""), '/');
         $route = \trim($state->route ?? "", '/');
-        $folder = \dirname(\LOT . \D . 'page' . \D . ($path ?: $route));
+        $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
         $page = new \Page(\exist([
             $folder . '.archive',
             $folder . '.page'
@@ -163,8 +151,7 @@ namespace x\feed\route {
         // Validate function name
         if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
             \status(403);
-            echo "";
-            exit;
+            return "";
         }
         $x_image = isset($state->x->image);
         $x_tag = isset($state->x->tag);
@@ -205,16 +192,18 @@ namespace x\feed\route {
             foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $content .= '<item>';
-                $content .= '<title><![CDATA[' . $page->title . ']]></title>';
-                $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
                 $content .= '<description><![CDATA[' . $page->description . ']]></description>';
-                $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
                 $content .= '<guid>' . \Hook::fire('link', [$page->url]) . '</guid>';
+                $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
+                $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
+                $content .= '<title><![CDATA[' . $page->title . ']]></title>';
                 if ($x_image && $image = $page->image(72, 72)) {
                     $content .= '<image>';
-                    $content .= '<title>' . \basename($link = $page->image) . '</title>';
+                    $content .= '<height>72</height>';
+                    $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
+                    $content .= '<title><![CDATA[' . $page->title . ']]></title>';
                     $content .= '<url>' . \Hook::fire('link', [$image]) . '</url>';
-                    $content .= '<link>' . \Hook::fire('link', [$link]) . '</link>';
+                    $content .= '<width>72</width>';
                     $content .= '</image>';
                 }
                 if ($x_tag) {
@@ -250,27 +239,17 @@ namespace x\feed\route {
         $content .= '</channel>';
         $content .= '</rss>';
         $age = 60 * 60 * 24; // Cache output for a day
-        \ob_start();
-        \ob_start("\\ob_gzhandler");
-        $content = $fire ? $fire . '(' . \json_encode($content, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ');' : $content;
-        echo \Hook::fire('content', [$content]);
-        \ob_end_flush();
-        $size = \ob_get_length();
         \status($status, $page_exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
-            'content-length' => $size,
             'expires' => \gmdate('D, d M Y H:i:s', $age + $_SERVER['REQUEST_TIME']) . ' GMT',
             'pragma' => 'private'
         ] : [
             'cache-control' => 'max-age=0, must-revalidate, no-cache, no-store',
-            'content-length' => $size,
             'expires' => '0',
             'pragma' => 'no-cache'
         ]);
         \type('application/' . ($fire ? 'javascript' : 'rss+xml'));
-        echo \ob_get_clean();
-        \Hook::fire('let');
-        exit;
+        return $fire ? $fire . '(' . \json_encode($content, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ');' : $content;
     }
     if ('feed.json' === \basename($url->path ?? "")) {
         \Hook::set('route', __NAMESPACE__ . "\\json", 10);
