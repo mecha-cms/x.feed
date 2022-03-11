@@ -74,7 +74,7 @@ namespace x\feed\route {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
-        $lot[0]['total'] = \count($pages);
+        $lot[0]['count'] = \count($pages);
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if ($part > 1) {
             $lot[0]['prev'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
