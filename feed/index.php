@@ -14,7 +14,7 @@ namespace x {
 
 // <https://validator.w3.org/feed/docs/rss2.html>
 namespace x\feed\route {
-    function json($content, $p) {
+    function json($content, $path) {
         if (null !== $content) {
             return $content;
         }
@@ -25,7 +25,7 @@ namespace x\feed\route {
         $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim(\dirname($p ?? ""), '/');
+        $path = \trim(\dirname($path ?? ""), '/');
         $route = \trim($state->route ?? "", '/');
         $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
         $page = new \Page(\exist([
@@ -49,7 +49,7 @@ namespace x\feed\route {
                 ])]),
                 'description' => ($page->description ?? $state->description) ?: null,
                 'generator' => 'Mecha ' . \VERSION,
-                'language' => $state->language,
+                'language' => $state->language ?? 'en',
                 'time' => (string) $page->time,
                 'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
                 'url' => \Hook::fire('link', [$url->current(false, false)])
@@ -135,7 +135,7 @@ namespace x\feed\route {
         \type('application/' . ($fire ? 'javascript' : 'json'));
         return ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
     }
-    function xml($content, $p) {
+    function xml($content, $path) {
         if (null !== $content) {
             return $content;
         }
@@ -146,7 +146,7 @@ namespace x\feed\route {
         $part = $_GET['part'] ?? 1;
         $query = $_GET['query'] ?? null;
         $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim(\dirname($p ?? ""), '/');
+        $path = \trim(\dirname($path ?? ""), '/');
         $route = \trim($state->route ?? "", '/');
         $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
         $page = new \Page(\exist([
@@ -171,7 +171,7 @@ namespace x\feed\route {
         $content .= '<link>' . \Hook::fire('link', [$url->clean(false, false)]) . '</link>';
         $content .= '<description><![CDATA[' . ($page->description ?? $state->description) . ']]></description>';
         $content .= '<lastBuildDate>' . \date('r', $_SERVER['REQUEST_TIME']) . '</lastBuildDate>';
-        $content .= '<language>' . $state->language . '</language>';
+        $content .= '<language>' . ($state->language ?? 'en') . '</language>';
         $content .= '<atom:link href="' . \Hook::fire('link', [$url->current(false, false) . \htmlspecialchars($url->query([
             'part' => $part,
             'sort' => $sort
