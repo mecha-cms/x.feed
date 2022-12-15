@@ -1,0 +1,8 @@
+{
+  "description": "RSS and JSON feed feature.",
+  "license": "GPL-3.0-or-later",
+  "name": "mecha-cms/x.comment",
+  "require": {
+    "mecha-cms/x.page": "^3.0.0"
+  }
+}
