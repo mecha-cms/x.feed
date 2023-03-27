@@ -6,10 +6,6 @@ color: '#ea6322'
 author: Taufik Nurrohman
 type: Markdown
 version: 3.0.0
-
-use:
-  '.\lot\x\language': 0
-  '.\lot\x\page': 1
 ...
 
 ### Usage
