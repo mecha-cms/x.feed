@@ -3,17 +3,19 @@
 namespace x {
     function feed($content) {
         \extract($GLOBALS, \EXTR_SKIP);
-        return \strtr($content ?? "", ['</head>' => '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml"></head>']);
+        $feed_json = '<link href="' . $url->current(false, false) . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
+        $feed_xml = '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
+        return \strtr($content ?? "", ['</head>' => $feed_json . $feed_xml . '</head>']);
     }
     // Insert some HTML `<link>` that maps to the feed resource
-    if (!\has(['feed.json', 'feed.xml'], \basename($url->path ?? ""))) {
+    if (!\in_array(\basename($url->path ?? ""), ['feed.json', 'feed.xml'])) {
         // Make sure to run the hook before `x\link\content`
         \Hook::set('content', __NAMESPACE__ . "\\feed", -1);
     }
 }
 
-// <https://validator.w3.org/feed/docs/rss2.html>
 namespace x\feed\route {
+    // <https://www.jsonfeed.org>
     function json($content, $path) {
         if (null !== $content) {
             return $content;
@@ -38,87 +40,194 @@ namespace x\feed\route {
             \status(403);
             return "";
         }
-        $x_image = isset($state->x->image);
         $x_tag = isset($state->x->tag);
+        $x_user = isset($state->x->user);
         $status = 200;
         $lot = [
-            0 => [
-                'current' => \Hook::fire('link', [$url->current(false, false) . $url->query([
-                    'part' => $part,
-                    'sort' => $sort
-                ])]),
-                'description' => ($page->description ?? $state->description) ?: null,
-                'generator' => 'Mecha ' . \VERSION,
-                'language' => $state->language ?? 'en',
-                'time' => (string) $page->time,
-                'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
-                'url' => \Hook::fire('link', [$url->current(false, false)])
-            ],
-            1 => null
+            'description' => ($page->description ?? $state->description) ?: null,
+            'feed_url' => \Hook::fire('link', [$url->current(false, false) . $url->query([
+                'part' => $part,
+                'sort' => $sort
+            ])]),
+            'home_page_url' => \Hook::fire('link', [(string) $url]),
+            'items' => [],
+            'title' => ($page_exist ? $page->title : \i('Error')) . ' | ' . $state->title,
+            'version' => 'https://jsonfeed.org/version/1.1'
         ];
-        if ($x_tag) {
-            $lot[0]['tags'] = [];
-            foreach (\g(\LOT . \D . 'tag', 'page') as $k => $v) {
-                $tag = new \Tag($k);
-                $lot[0]['tags'][$tag->name] = [
-                    'description' => $tag->description ?: null,
-                    'id' => $tag->id,
-                    'time' => (string) $tag->time,
-                    'title' => $tag->title
-                ];
-                \ksort($lot[0]['tags']);
+        if ($author = $page->author) {
+            if ($x_user && $author instanceof \User) {
+                $author_avatar = $author->avatar(512, 512);
+                $author_link = $author->link;
+                $author_url = $author->url;
+                if ($author_avatar) {
+                    $author['avatar'] = \Hook::fire('link', [$author_avatar]);
+                }
+                $author = ['name' => (string) $author];
+                if ($author_link || $author_url) {
+                    $author['url'] = \Hook::fire('link', [$author_link ?? $author_url]);
+                }
+                \ksort($author);
+                $lot['author'] = $lot['authors'][0] = $author;
+            } else if (\is_string($author)) {
+                $lot['author'] = $lot['authors'][0] = ['name' => $author];
             }
+        }
+        if (\is_file(\PATH . \D . 'favicon.ico')) {
+            $lot['favicon'] = \Hook::fire('link', [$url . '/favicon.ico']);
+        }
+        if ($image = $page->image(512, 512) ?? $page->avatar(512, 512)) {
+            $lot['icon'] = \Hook::fire('link', [$image]);
+        }
+        if ($language = $state->language) {
+            $lot['language'] = $language;
         }
         $pages = [];
         foreach ($query ? \k($folder, 'page', $deep, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep) as $k => $v) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
-        $lot[0]['count'] = \count($pages);
         $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
-        if ($part > 1) {
-            $lot[0]['prev'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
-                'part' => $part - 1,
-                'sort' => $sort
-            ])]);
-        }
         if (!empty($pages[$part])) {
-            $lot[0]['next'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
+            $lot['next_url'] = \Hook::fire('link', [$url->current(false, false) . $url->query([
                 'part' => $part + 1,
                 'sort' => $sort
             ])]);
         }
         if (!empty($pages[$part - 1])) {
-            $lot[1] = [];
             foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
-                $lot[1][$k] = [
-                    'description' => $page->description ?: null,
-                    'id' => $page->id,
-                    'image' => \Hook::fire('link', [$x_image ? $page->image(72, 72) : null]),
-                    'link' => \Hook::fire('link', [$page->link]),
-                    'time' => (string) $page->time,
-                    'title' => $page->title,
-                    'url' => \Hook::fire('link', [$page->url])
-                ];
-                if ($x_tag) {
-                    $lot[1][$k]['kind'] = (array) $page->kind;
+                $item = [];
+                // if ($page_content = $page->content) {
+                //     $item['content_html'] = $page_content;
+                //     $item['content_text'] = \trim(\strip_tags($page_content));
+                // }
+                if ($page_author = $page->author) {
+                    if ($x_user && $page_author instanceof \User) {
+                        $author = ['name' => (string) $page_author];
+                        $page_author_avatar = $page_author->avatar(512, 512);
+                        $page_author_link = $page_author->link;
+                        $page_author_url = $page_author->url;
+                        if ($page_author_avatar) {
+                            $author['avatar'] = \Hook::fire('link', [$page_author_avatar]);
+                        }
+                        if ($page_author_link || $page_author_url) {
+                            $author['url'] = \Hook::fire('link', [$page_author_link ?? $page_author_url]);
+                        }
+                        \ksort($author);
+                    } else if (\is_string($page_author)) {
+                        $author = ['name' => $page_author];
+                    }
+                    $item['authors'][0] = $author;
                 }
+                if (\is_file($page_path = $page->path)) {
+                    $item['date_modified'] = \date(\DATE_RFC3339, \filemtime($page_path));
+                }
+                if ($page_time = $page->time(\DATE_RFC3339)) {
+                    $item['date_published'] = $page_time;
+                }
+                if ($page_link = $page->link) {
+                    $item['external_url'] = \Hook::fire('link', [$page_link]);
+                }
+                $item['id'] = (string) $page->id;
+                if ($page_image = $page->image) {
+                    $item['image'] = $page_image;
+                }
+                if ($page_description = $page->description) {
+                    if ("" !== ($page_description = \trim(\strip_tags($page_description)))) {
+                        $item['summary'] = $page_description;
+                    }
+                }
+                if ($page_language = $page->language) {
+                    $item['language'] = $page_language;
+                }
+                if ($x_tag && $page_tags = $page->tags) {
+                    if ($page_tags->count) {
+                        $item['tags'] = [];
+                        foreach ($page_tags as $page_tag) {
+                            $page_tag_title = $page_tag->title;
+                            if ("" !== ($page_tag_title = \trim(\strip_tags($page_tag_title)))) {
+                                $item['tags'][] = $page_tag_title;
+                            }
+                        }
+                    }
+                }
+                if ($page_title = $page->title) {
+                    if ("" !== ($page_title = \trim(\strip_tags($page_title)))) {
+                        $item['title'] = $page_title;
+                    }
+                }
+                if ($page_url = $page->url) {
+                    $item['url'] = \Hook::fire('link', [$page_url]);
+                }
+                \ksort($item);
+                $lot['items'][] = $item;
             }
         } else if ($page_exist) {
-            $lot[1] = [];
-            $lot[1][0] = [
-                'description' => $page->description ?: null,
-                'id' => $page->id,
-                'image' => \Hook::fire('link', [$x_image ? $page->image(72, 72) : null]),
-                'link' => \Hook::fire('link', [$page->link]),
-                'time' => (string) $page->time,
-                'title' => $page->title,
-                'url' => \Hook::fire('link', [$page->url])
-            ];
-            if ($x_tag) {
-                $lot[1][0]['kind'] = (array) $page->kind;
+            $item = [];
+            // if ($page_content = $page->content) {
+            //     $item['content_html'] = $page_content;
+            //     $item['content_text'] = \trim(\strip_tags($page_content));
+            // }
+            if ($page_author = $page->author) {
+                if ($x_user && $page_author instanceof \User) {
+                    $author = ['name' => (string) $page_author];
+                    $page_author_avatar = $page_author->avatar(512, 512);
+                    $page_author_link = $page_author->link;
+                    $page_author_url = $page_author->url;
+                    if ($page_author_avatar) {
+                        $author['avatar'] = \Hook::fire('link', [$page_author_avatar]);
+                    }
+                    if ($page_author_link || $page_author_url) {
+                        $author['url'] = \Hook::fire('link', [$page_author_link ?? $page_author_url]);
+                    }
+                    \ksort($author);
+                } else if (\is_string($page_author)) {
+                    $author = ['name' => $page_author];
+                }
+                $item['authors'][0] = $author;
             }
+            if (\is_file($page_path = $page->path)) {
+                $item['date_modified'] = \date(\DATE_RFC3339, \filemtime($page_path));
+            }
+            if ($page_time = $page->time(\DATE_RFC3339)) {
+                $item['date_published'] = $page_time;
+            }
+            if ($page_link = $page->link) {
+                $item['external_url'] = \Hook::fire('link', [$page_link]);
+            }
+            $item['id'] = (string) $page->id;
+            if ($page_image = $page->image) {
+                $item['image'] = $page_image;
+            }
+            if ($page_description = $page->description) {
+                if ("" !== ($page_description = \trim(\strip_tags($page_description)))) {
+                    $item['summary'] = $page_description;
+                }
+            }
+            if ($page_language = $page->language) {
+                $item['language'] = $page_language;
+            }
+            if ($x_tag && $page_tags = $page->tags) {
+                if ($page_tags->count) {
+                    $item['tags'] = [];
+                    foreach ($page_tags as $page_tag) {
+                        $page_tag_title = $page_tag->title;
+                        if ("" !== ($page_tag_title = \trim(\strip_tags($page_tag_title)))) {
+                            $item['tags'][] = $page_tag_title;
+                        }
+                    }
+                }
+            }
+            if ($page_title = $page->title) {
+                if ("" !== ($page_title = \trim(\strip_tags($page_title)))) {
+                    $item['title'] = $page_title;
+                }
+            }
+            if ($page_url = $page->url) {
+                $item['url'] = \Hook::fire('link', [$page_url]);
+            }
+            \ksort($item);
+            $lot['items'][] = $item;
         } else {
             $status = 404;
         }
@@ -132,9 +241,10 @@ namespace x\feed\route {
             'expires' => '0',
             'pragma' => 'no-cache'
         ]);
-        \type('application/' . ($fire ? 'javascript' : 'json'));
+        \type('application/' . ($fire ? 'javascript' : 'feed+json'));
         return ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
     }
+    // <https://validator.w3.org/feed/docs/rss2.html>
     function xml($content, $path) {
         if (null !== $content) {
             return $content;
@@ -203,13 +313,13 @@ namespace x\feed\route {
                 $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
                 $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
                 $content .= '<title><![CDATA[' . $page->title . ']]></title>';
-                if ($x_image && $image = $page->image(72, 72)) {
+                if ($x_image && $image = $page->image(512, 512)) {
                     $content .= '<image>';
-                    $content .= '<height>72</height>';
+                    $content .= '<height>512</height>';
                     $content .= '<link>' . \Hook::fire('link', [$page->url]) . '</link>';
                     $content .= '<title><![CDATA[' . $page->title . ']]></title>';
                     $content .= '<url>' . \Hook::fire('link', [$image]) . '</url>';
-                    $content .= '<width>72</width>';
+                    $content .= '<width>512</width>';
                     $content .= '</image>';
                 }
                 if ($x_tag) {
@@ -226,11 +336,13 @@ namespace x\feed\route {
             $content .= '<description><![CDATA[' . $page->description . ']]></description>';
             $content .= '<pubDate>' . $page->time->format('r') . '</pubDate>';
             $content .= '<guid>' . \Hook::fire('link', [$page->url]) . '</guid>';
-            if ($x_image && $image = $page->image(72, 72)) {
+            if ($x_image && $image = $page->image(512, 512)) {
                 $content .= '<image>';
+                $content .= '<height>512</height>';
+                $content .= '<link>' . \Hook::fire('link', [$link]) . '</link>';
                 $content .= '<title>' . \basename($link = $page->image) . '</title>';
                 $content .= '<url>' . \Hook::fire('link', [$image]) . '</url>';
-                $content .= '<link>' . \Hook::fire('link', [$link]) . '</link>';
+                $content .= '<width>512</width>';
                 $content .= '</image>';
             }
             if ($x_tag) {
