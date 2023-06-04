@@ -343,8 +343,6 @@ function route($content, $path) {
 
 // Insert some HTML `<link>` that maps to the feed resource
 if (!\in_array(\basename($url->path ?? ""), ['feed.json', 'feed.xml'])) {
-    // Make sure to run the hook before `x\link\content`
     \Hook::set('content', __NAMESPACE__ . "\\content", -1);
+    \Hook::set('route', __NAMESPACE__ . "\\route", 10);
 }
-
-\Hook::set('route', __NAMESPACE__ . "\\route", 10);
