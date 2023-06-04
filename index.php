@@ -1,48 +1,43 @@
-<?php
+<?php namespace x\feed;
 
-namespace x {
-    function feed($content) {
-        \extract($GLOBALS, \EXTR_SKIP);
-        $feed_json = '<link href="' . $url->current(false, false) . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
-        $feed_xml = '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
-        return \strtr($content ?? "", ['</head>' => $feed_json . $feed_xml . '</head>']);
-    }
-    // Insert some HTML `<link>` that maps to the feed resource
-    if (!\in_array(\basename($url->path ?? ""), ['feed.json', 'feed.xml'])) {
-        // Make sure to run the hook before `x\link\content`
-        \Hook::set('content', __NAMESPACE__ . "\\feed", -1);
-    }
+function content($content) {
+    \extract($GLOBALS, \EXTR_SKIP);
+    $json = '<link href="' . $url->current(false, false) . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
+    $xml = '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
+    return \strtr($content ?? "", ['</head>' => $json . $xml . '</head>']);
 }
 
-namespace x\feed\route {
+function route($content, $path) {
+    if (null !== $content) {
+        return $content;
+    }
+    \extract($GLOBALS, \EXTR_SKIP);
+    $x_image = isset($state->x->image);
+    $x_tag = isset($state->x->tag);
+    $x_user = isset($state->x->user);
+    $chunk = $_GET['chunk'] ?? 25;
+    $deep = $_GET['deep'] ?? 0;
+    $fire = $_GET['fire'] ?? null;
+    // Validate function name
+    if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
+        \status(403);
+        return "";
+    }
+    $part = $_GET['part'] ?? 1;
+    $query = $_GET['query'] ?? null;
+    $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
+    $path = \trim(\dirname($path ?? ""), '/');
+    $route = \trim($state->route ?? "", '/');
+    $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
+    $page = new \Page(\exist([
+        $folder . '.archive',
+        $folder . '.page'
+    ], 1) ?: null);
+    $page_exist = $page->exist();
+    $name =\basename($path ?? "");
+    $status = 200;
     // <https://www.jsonfeed.org>
-    function json($content, $path) {
-        if (null !== $content) {
-            return $content;
-        }
-        \extract($GLOBALS, \EXTR_SKIP);
-        $chunk = $_GET['chunk'] ?? 25;
-        $deep = $_GET['deep'] ?? 0;
-        $fire = $_GET['fire'] ?? null;
-        $part = $_GET['part'] ?? 1;
-        $query = $_GET['query'] ?? null;
-        $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim(\dirname($path ?? ""), '/');
-        $route = \trim($state->route ?? "", '/');
-        $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
-        $page = new \Page(\exist([
-            $folder . '.archive',
-            $folder . '.page'
-        ], 1) ?: null);
-        $page_exist = $page->exist();
-        // Validate function name
-        if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
-            \status(403);
-            return "";
-        }
-        $x_tag = isset($state->x->tag);
-        $x_user = isset($state->x->user);
-        $status = 200;
+    if ('feed.json' === $name) {
         $lot = [
             'description' => ($page->description ?? $state->description) ?: null,
             'feed_url' => \Hook::fire('link', [$url->current(false, false) . $url->query([
@@ -245,33 +240,7 @@ namespace x\feed\route {
         return ($fire ? $fire . '(' : "") . \json_encode($lot, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ($fire ? ');' : "");
     }
     // <https://validator.w3.org/feed/docs/rss2.html>
-    function xml($content, $path) {
-        if (null !== $content) {
-            return $content;
-        }
-        \extract($GLOBALS, \EXTR_SKIP);
-        $chunk = $_GET['chunk'] ?? 25;
-        $deep = $_GET['deep'] ?? 0;
-        $fire = $_GET['fire'] ?? null;
-        $part = $_GET['part'] ?? 1;
-        $query = $_GET['query'] ?? null;
-        $sort = \array_replace([-1, 'time'], (array) ($_GET['sort'] ?? []));
-        $path = \trim(\dirname($path ?? ""), '/');
-        $route = \trim($state->route ?? "", '/');
-        $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
-        $page = new \Page(\exist([
-            $folder . '.archive',
-            $folder . '.page'
-        ], 1) ?: null);
-        $page_exist = $page->exist();
-        // Validate function name
-        if ($fire && !\preg_match('/^[a-z_$][\w$]*(\.[a-z_$][\w$]*)*$/i', $fire)) {
-            \status(403);
-            return "";
-        }
-        $x_image = isset($state->x->image);
-        $x_tag = isset($state->x->tag);
-        $status = 200;
+    if ('feed.xml' === $name) {
         $content = "";
         $content .= '<?xml version="1.0" encoding="utf-8"?>';
         $content .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
@@ -369,9 +338,13 @@ namespace x\feed\route {
         \type('application/' . ($fire ? 'javascript' : 'rss+xml'));
         return $fire ? $fire . '(' . \json_encode($content, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ');' : $content;
     }
-    if ('feed.json' === \basename($url->path ?? "")) {
-        \Hook::set('route', __NAMESPACE__ . "\\json", 10);
-    } else if ('feed.xml' === \basename($url->path ?? "")) {
-        \Hook::set('route', __NAMESPACE__ . "\\xml", 10);
-    }
+    return $content;
 }
+
+// Insert some HTML `<link>` that maps to the feed resource
+if (!\in_array(\basename($url->path ?? ""), ['feed.json', 'feed.xml'])) {
+    // Make sure to run the hook before `x\link\content`
+    \Hook::set('content', __NAMESPACE__ . "\\content", -1);
+}
+
+\Hook::set('route', __NAMESPACE__ . "\\route", 10);
