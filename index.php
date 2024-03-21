@@ -2,7 +2,7 @@
 
 // Insert some HTML `<link>` that maps to the feed resource
 function content($content) {
-    \extract($GLOBALS, \EXTR_SKIP);
+    \extract(\lot(), \EXTR_SKIP);
     $json = '<link href="' . $url->current(false, false) . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
     $xml = '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
     return \strtr($content ?? "", ['</head>' => $json . $xml . '</head>']);
@@ -12,7 +12,7 @@ function route($content, $path) {
     if (null !== $content) {
         return $content;
     }
-    \extract($GLOBALS, \EXTR_SKIP);
+    \extract(\lot(), \EXTR_SKIP);
     $x_image = isset($state->x->image);
     $x_tag = isset($state->x->tag);
     $x_user = isset($state->x->user);
@@ -226,8 +226,8 @@ function route($content, $path) {
         } else {
             $status = 404;
         }
-        $age = 60 * 60 * 24; // Cache output for a day
-        $content = \json_encode(\Hook::fire('y.feed', [$lot], $page), \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE);
+        $age = 60 * 60 * 24; // Cache for a day
+        $content = \To::JSON(\Hook::fire('y.feed', [$lot], $page));
         \status($status, $exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
             'expires' => \gmdate('D, d M Y H:i:s', $age + $_SERVER['REQUEST_TIME']) . ' GMT',
@@ -347,7 +347,7 @@ function route($content, $path) {
         } else {
             $status = 404;
         }
-        $age = 60 * 60 * 24; // Cache output for a day
+        $age = 60 * 60 * 24; // Cache for a day
         $content = '<?xml version="1.0" encoding="utf-8"?>' . (new \XML(\Hook::fire('y.feed', [$lot], $page), true));
         \status($status, $exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
@@ -359,7 +359,7 @@ function route($content, $path) {
             'pragma' => 'no-cache'
         ]);
         \type('application/' . ($fire ? 'javascript' : 'rss+xml'));
-        return $fire ? $fire . '(' . \json_encode($content, \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE) . ');' : $content;
+        return $fire ? $fire . '(' . \To::JSON($content) . ');' : $content;
     }
     return $content;
 }
