@@ -10,9 +10,9 @@ version: 3.0.0
 
 ### Usage
 
- - Normal view → `./path/to/page`
- - JSON view → `./path/to/page/feed.json`
- - RSS view → `./path/to/page/feed.xml`
+ - Normal view → `./route/to/article`
+ - JSON view → `./route/to/article/feed.json`
+ - RSS view → `./route/to/article/feed.xml`
 
 ### Parameter
 
