@@ -35,7 +35,6 @@ function route($content, $path) {
         $folder . '.archive',
         $folder . '.page'
     ], 1) ?: null);
-    $status = 200;
     // <https://www.jsonfeed.org>
     if ('feed.json' === $n) {
         $lot = [
@@ -44,7 +43,7 @@ function route($content, $path) {
                 'part' => $part,
                 'sort' => $sort
             ], false)]),
-            'home_page_url' => \Hook::fire('link', [(string) $url]),
+            'home_page_url' => \Hook::fire('link', [""]),
             'items' => [],
             'title' => ($exist ? $page->title : \i('Error')) . ' | ' . $state->title,
             'version' => 'https://jsonfeed.org/version/1.1'
@@ -68,7 +67,7 @@ function route($content, $path) {
             }
         }
         if (\is_file(\PATH . \D . 'favicon.ico')) {
-            $lot['favicon'] = \Hook::fire('link', [$url . '/favicon.ico']);
+            $lot['favicon'] = \Hook::fire('link', ['/favicon.ico']);
         }
         if ($image = $page->image(512, 512) ?? $page->avatar(512, 512)) {
             $lot['icon'] = \Hook::fire('link', [$image]);
@@ -89,6 +88,7 @@ function route($content, $path) {
             ], false)]);
         }
         if (!empty($pages[$part - 1])) {
+            $exist = true;
             foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $item = [];
@@ -155,7 +155,7 @@ function route($content, $path) {
                     $item['url'] = \Hook::fire('link', [$page_url]);
                 }
                 \ksort($item);
-                $lot['items'][] = $item;
+                $lot['items'][$v] = $item;
             }
         } else if ($exist) {
             $item = [];
@@ -222,13 +222,11 @@ function route($content, $path) {
                 $item['url'] = \Hook::fire('link', [$page_url]);
             }
             \ksort($item);
-            $lot['items'][] = $item;
-        } else {
-            $status = 404;
+            $lot['items'][$exist] = $item;
         }
         $age = 60 * 60 * 24; // Cache for a day
         $content = \To::JSON(\Hook::fire('y.feed', [$lot], $page));
-        \status($status, $exist ? [
+        \status($exist ? 200 : 404, $exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
             'expires' => \gmdate('D, d M Y H:i:s', $age + $_SERVER['REQUEST_TIME']) . ' GMT',
             'pragma' => 'private'
@@ -294,6 +292,7 @@ function route($content, $path) {
             ]];
         }
         if (!empty($pages[$part - 1])) {
+            $exist = true;
             foreach (\array_keys($pages[$part - 1]) as $k => $v) {
                 $page = new \Page($v);
                 $item = ['item', [], []];
@@ -318,7 +317,7 @@ function route($content, $path) {
                         ]];
                     }
                 }
-                $lot[1][$guid] = $item;
+                $lot[1][$v] = $item;
             }
         } else if ($exist) {
             $item = ['item', [], []];
@@ -343,13 +342,11 @@ function route($content, $path) {
                     ]];
                 }
             }
-            $lot[1][$guid] = $item;
-        } else {
-            $status = 404;
+            $lot[1][$exist] = $item;
         }
         $age = 60 * 60 * 24; // Cache for a day
         $content = '<?xml version="1.0" encoding="utf-8"?>' . (new \XML(\Hook::fire('y.feed', [$lot], $page), true));
-        \status($status, $exist ? [
+        \status($exist ? 200 : 404, $exist ? [
             'cache-control' => 'max-age=' . $age . ', private',
             'expires' => \gmdate('D, d M Y H:i:s', $age + $_SERVER['REQUEST_TIME']) . ' GMT',
             'pragma' => 'private'
