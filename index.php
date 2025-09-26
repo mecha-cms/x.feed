@@ -76,7 +76,7 @@ function route($content, $path) {
             $lot['language'] = $language;
         }
         $pages = [];
-        foreach ($query ? \k($folder, 'page', $deep, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep) as $k => $v) {
+        foreach ($query ? \k($folder, 'page', $deep, true, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep, true) as $k => $v) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
@@ -268,7 +268,7 @@ function route($content, $path) {
             ]
         ];
         $pages = [];
-        foreach ($query ? \k($folder, 'page', $deep, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep) as $k => $v) {
+        foreach ($query ? \k($folder, 'page', $deep, true, \preg_split('/\s+/', $query), true) : \g($folder, 'page', $deep, true) as $k => $v) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
