@@ -3,8 +3,11 @@
 // Insert some HTML `<link>` that maps to the feed resource
 function content($content) {
     \extract(\lot(), \EXTR_SKIP);
-    $json = '<link href="' . $url->current(false, false) . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
-    $xml = '<link href="' . $url->current(false, false) . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
+    if (empty($page)) {
+        return $content;
+    }
+    $json = '<link href="' . $page->link . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
+    $xml = '<link href="' . $page->link . '/feed.xml" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/rss+xml">';
     return \strtr($content ?? "", ['</head>' => $json . $xml . '</head>']);
 }
 
@@ -39,7 +42,7 @@ function route($content, $path) {
     if ('feed.json' === $n) {
         $lot = [
             'description' => ($page->description ?? $state->description) ?: null,
-            'feed_url' => \Hook::fire('link', [$url->current([
+            'feed_url' => \Hook::fire('link', [$link->current([
                 'part' => $part,
                 'sort' => $sort
             ], false)]),
@@ -52,13 +55,13 @@ function route($content, $path) {
             if ($x_user && $page_author instanceof \User) {
                 $page_author_avatar = $page_author->avatar(512, 512);
                 $page_author_link = $page_author->link;
-                $page_author_url = $page_author->url;
+                $page_author_links = (array) ($page_author->links ?? []);
                 $author = ['name' => (string) $page_author];
                 if ($page_author_avatar) {
                     $author['avatar'] = \Hook::fire('link', [$page_author_avatar]);
                 }
-                if ($page_author_link || $page_author_url) {
-                    $author['url'] = \Hook::fire('link', [$page_author_link ?? $page_author_url]);
+                if ($page_author_link || $page_author_links) {
+                    $author['url'] = \Hook::fire('link', [$page_author_links ? \reset($page_author_links) : $page_author_link]);
                 }
                 \ksort($author);
                 $lot['author'] = $lot['authors'][0] = $author;
@@ -80,9 +83,9 @@ function route($content, $path) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
-        $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
+        $pages = (new \Batch($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if (!empty($pages[$part])) {
-            $lot['next_url'] = \Hook::fire('link', [$url->current([
+            $lot['next_url'] = \Hook::fire('link', [$link->current([
                 'part' => $part + 1,
                 'sort' => $sort
             ], false)]);
@@ -100,13 +103,13 @@ function route($content, $path) {
                     if ($x_user && $page_author instanceof \User) {
                         $page_author_avatar = $page_author->avatar(512, 512);
                         $page_author_link = $page_author->link;
-                        $page_author_url = $page_author->url;
+                        $page_author_links = (array) ($page_author->links ?? []);
                         $author = ['name' => (string) $page_author];
                         if ($page_author_avatar) {
                             $author['avatar'] = \Hook::fire('link', [$page_author_avatar]);
                         }
-                        if ($page_author_link || $page_author_url) {
-                            $author['url'] = \Hook::fire('link', [$page_author_link ?? $page_author_url]);
+                        if ($page_author_link || $page_author_links) {
+                            $author['url'] = \Hook::fire('link', [$page_author_links ? \reset($page_author_links) : $page_author_link]);
                         }
                         \ksort($author);
                     } else if (\is_string($page_author)) {
@@ -120,7 +123,7 @@ function route($content, $path) {
                 if ($page_time = $page->time(\DATE_RFC3339)) {
                     $item['date_published'] = $page_time;
                 }
-                if ($page_link = $page->link) {
+                if (\is_array($page_links = $page->links) && ($page_link = \reset($page_links))) {
                     $item['external_url'] = \Hook::fire('link', [$page_link]);
                 }
                 $item['id'] = (string) $page->id;
@@ -151,8 +154,8 @@ function route($content, $path) {
                         $item['title'] = $page_title;
                     }
                 }
-                if ($page_url = $page->url) {
-                    $item['url'] = \Hook::fire('link', [$page_url]);
+                if ($page_link = $page->link) {
+                    $item['url'] = \Hook::fire('link', [$page_link]);
                 }
                 \ksort($item);
                 $lot['items'][$v] = $item;
@@ -167,13 +170,13 @@ function route($content, $path) {
                 if ($x_user && $page_author instanceof \User) {
                     $page_author_avatar = $page_author->avatar(512, 512);
                     $page_author_link = $page_author->link;
-                    $page_author_url = $page_author->url;
+                    $page_author_links = (array) ($page_author->links ?? []);
                     $author = ['name' => (string) $page_author];
                     if ($page_author_avatar) {
                         $author['avatar'] = \Hook::fire('link', [$page_author_avatar]);
                     }
-                    if ($page_author_link || $page_author_url) {
-                        $author['url'] = \Hook::fire('link', [$page_author_link ?? $page_author_url]);
+                    if ($page_author_link || $page_author_links) {
+                        $author['url'] = \Hook::fire('link', [$page_author_links ? \reset($page_author_links) : $page_author_link]);
                     }
                     \ksort($author);
                 } else if (\is_string($page_author)) {
@@ -187,7 +190,7 @@ function route($content, $path) {
             if ($page_time = $page->time(\DATE_RFC3339)) {
                 $item['date_published'] = $page_time;
             }
-            if ($page_link = $page->link) {
+            if (\is_array($page_links = $page->links) && ($page_link = \reset($page_links))) {
                 $item['external_url'] = \Hook::fire('link', [$page_link]);
             }
             $item['id'] = (string) $page->id;
@@ -218,8 +221,8 @@ function route($content, $path) {
                     $item['title'] = $page_title;
                 }
             }
-            if ($page_url = $page->url) {
-                $item['url'] = \Hook::fire('link', [$page_url]);
+            if ($page_link = $page->link) {
+                $item['url'] = \Hook::fire('link', [$page_link]);
             }
             \ksort($item);
             $lot['items'][$exist] = $item;
@@ -245,7 +248,7 @@ function route($content, $path) {
             1 => [
                 ['channel', [
                     ['atom:link', false, [
-                        'href' => \Hook::fire('link', [$url->current([
+                        'href' => \Hook::fire('link', [$link->current([
                             'part' => $part,
                             'sort' => $sort
                         ], false)]),
@@ -255,7 +258,7 @@ function route($content, $path) {
                     ['generator', '<![CDATA[Mecha ' . \VERSION . ']]>', []],
                     ['language', $state->language ?? 'en', []],
                     ['lastBuildDate', \date('r', $_SERVER['REQUEST_TIME']), []],
-                    ['link', \htmlspecialchars(\Hook::fire('link', [$url->current([
+                    ['link', \htmlspecialchars(\Hook::fire('link', [$link->current([
                         'part' => $part,
                         'sort' => $sort
                     ], false)])), []],
@@ -272,10 +275,10 @@ function route($content, $path) {
             $p = new \Page($k);
             $pages[$k] = [$sort[1] => (string) ($p->{$sort[1]} ?? 0)];
         }
-        $pages = (new \Anemone($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
+        $pages = (new \Batch($pages))->sort($sort, true)->chunk($chunk, -1, true)->get();
         if ($part > 1) {
             $lot[1][] = ['atom:link', false, [
-                'href' => \Hook::fire('link', [$url->current([
+                'href' => \Hook::fire('link', [$link->current([
                     'part' => $part - 1,
                     'sort' => $sort
                 ], false)]),
@@ -284,7 +287,7 @@ function route($content, $path) {
         }
         if (!empty($pages[$part])) {
             $lot[1][] = ['atom:link', false, [
-                'href' => \Hook::fire('link', [$url->current([
+                'href' => \Hook::fire('link', [$link->current([
                     'part' => $part + 1,
                     'sort' => $sort
                 ], false)]),
@@ -297,7 +300,7 @@ function route($content, $path) {
                 $page = new \Page($v);
                 $item = ['item', [], []];
                 $item[1][] = ['description', '<![CDATA[' . $page->description . ']]>', []];
-                $item[1][] = ['guid', $guid = \htmlspecialchars(\Hook::fire('link', [$page->url])), []];
+                $item[1][] = ['guid', $guid = \htmlspecialchars(\Hook::fire('link', [$page->link])), []];
                 $item[1][] = ['link', $guid, []];
                 $item[1][] = ['pubDate', $page->time->format('r'), []];
                 $item[1][] = ['title', '<![CDATA[' . $page->title . ']]>', []];
@@ -322,7 +325,7 @@ function route($content, $path) {
         } else if ($exist) {
             $item = ['item', [], []];
             $item[1][] = ['description', '<![CDATA[' . $page->description . ']]>', []];
-            $item[1][] = ['guid', $guid = \htmlspecialchars(\Hook::fire('link', [$page->url])), []];
+            $item[1][] = ['guid', $guid = \htmlspecialchars(\Hook::fire('link', [$page->link])), []];
             $item[1][] = ['link', $guid, []];
             $item[1][] = ['pubDate', $page->time->format('r'), []];
             $item[1][] = ['title', '<![CDATA[' . $page->title . ']]>', []];
@@ -361,7 +364,7 @@ function route($content, $path) {
     return $content;
 }
 
-if (!\in_array(\basename($url->path ?? ""), ['feed.json', 'feed.xml'])) {
+if (!\in_array(\basename($link->path ?? ""), ['feed.json', 'feed.xml'])) {
     \Hook::set('content', __NAMESPACE__ . "\\content", -1);
 } else {
     \Hook::set('route', __NAMESPACE__ . "\\route", 10);
