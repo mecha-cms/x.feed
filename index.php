@@ -3,7 +3,7 @@
 // Insert some HTML `<link>` that maps to the feed resource
 function content($content) {
     \extract(\lot(), \EXTR_SKIP);
-    if (empty($page)) {
+    if (!$content || empty($page)) {
         return $content;
     }
     $json = '<link href="' . $page->link . '/feed.json" rel="alternate" title="' . \i('RSS') . ' | ' . \w($state->title) . '" type="application/feed+json">';
@@ -32,7 +32,7 @@ function route($content, $path) {
     }
     $home = \trim($state->home ?? "", '/');
     $n = \basename($path = \trim(\dirname($path ?? ""), '/'));
-    $folder = \LOT . \D . 'page' . \D . ($path ?: $home);
+    $folder = \LOT . \D . 'page' . \D . \rawurldecode($path ?: $home);
     $page = new \Page($exist = \exist([
         $folder . '.archive',
         $folder . '.page'
