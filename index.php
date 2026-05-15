@@ -30,10 +30,9 @@ function route($content, $path) {
         \status(403);
         return "";
     }
-    $n = \basename($path ?? "");
-    $path = \trim(\dirname($path ?? ""), '/');
-    $route = \trim($state->route ?? "", '/');
-    $folder = \LOT . \D . 'page' . \D . ($path ?: $route);
+    $home = \trim($state->home ?? "", '/');
+    $n = \basename($path = \trim(\dirname($path ?? ""), '/'));
+    $folder = \LOT . \D . 'page' . \D . ($path ?: $home);
     $page = new \Page($exist = \exist([
         $folder . '.archive',
         $folder . '.page'
